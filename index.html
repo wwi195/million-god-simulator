@@ -196,7 +196,66 @@ body {
 
 <script>
 // ========== CONSTANTS ==========
-// (Task 2 で追加)
+const ROLE_TABLE = [
+  { key: 'hazure',         label: 'ハズレ',           weight: 18.7384 },
+  { key: 'replay_top',     label: '上段リプレイ',       weight: 12.6582 },
+  { key: 'yellow7_bottom', label: '下段黄7',           weight:  5.4348 },
+  { key: 'gaia_bell',      label: 'ガイアベル',         weight:  2.6596 },
+  { key: 'replay_mid',     label: '中段リプレイ',       weight:  0.9158 },
+  { key: 'yellow7_up',     label: '右上がり黄7',        weight:  0.5371 },
+  { key: 'fake_replay',    label: '赤7フェイクリプレイ', weight:  0.1068 },
+  { key: 'yellow7_mid',    label: '中段黄7',           weight:  0.1038 },
+  { key: 'red7_suroe',     label: '赤7揃い',           weight:  0.0145 },
+  { key: 'god_suroe',      label: 'GOD揃い',           weight:  0.0061 },
+  { key: 'sp_role',        label: 'SP役',              weight:  0.0015 },
+];
+const ROLE_TOTAL_WEIGHT = ROLE_TABLE.reduce((s, r) => s + r.weight, 0);
+
+const GG_SINGLE_TABLE = {
+  hazure:         0.016,
+  replay_top:     0.016,
+  gaia_bell:      0.016,
+  yellow7_bottom: 0.016,
+  fake_replay:    0.016,
+  replay_mid:     0.50,
+  yellow7_up:     0.625,
+  yellow7_mid:    1.0,
+  red7_suroe:     1.0,
+  god_suroe:      1.0,
+  sp_role:        1.0,
+};
+
+const REPLAY_CHAIN_RATE  = [0, 0.059, 0.059, 0.25, 0.75, 1.0];
+const YELLOW7_CHAIN_RATE = [0, 0.012, 0.012, 0.102, 0.50, 1.0];
+
+const GUARANTEE_ADD_TABLE = {
+  hazure:         0.053,
+  replay_top:     0.053,
+  gaia_bell:      0.053,
+  yellow7_bottom: 0.053,
+  fake_replay:    0.053,
+  replay_mid:     1.0,
+  yellow7_up:     1.0,
+};
+
+const FALL_RATE = { hazure: 0.129 };
+
+const FORBIDDEN_BARAKEME = new Set([
+  '135','315','468','526','354','448','664',
+  '012','026','032','038','046','04V','075',
+  '104','110','123','168','175','184',
+  '201','223','280','283',
+  '324','344',
+  '415','428',
+  '514',
+  '634','681',
+  '801','808','821','841','845','850','873','884',
+]);
+
+const Z_ZONE_CONFIG = {
+  maxGames:     null,
+  successCount: 5,
+};
 
 // ========== GAME STATE ==========
 // (Task 4 で追加)
