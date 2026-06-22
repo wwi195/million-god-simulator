@@ -258,7 +258,48 @@ const Z_ZONE_CONFIG = {
 };
 
 // ========== GAME STATE ==========
-// (Task 4 で追加)
+let gameState = {
+  totalGames:     0,
+  guaranteeGames: 9,
+  replayChain:    0,
+  yellow7Chain:   0,
+  phase:          'gaia',
+  chokkouCount:   0,
+  chokkouTarget:  null,
+  ggDigits:       null,
+  pendingFall:    false,
+};
+
+function resetGameState() {
+  gameState = {
+    totalGames: 0, guaranteeGames: 9,
+    replayChain: 0, yellow7Chain: 0,
+    phase: 'gaia', chokkouCount: 0,
+    chokkouTarget: null, ggDigits: null,
+    pendingFall: false,
+  };
+}
+
+function rollRole() {
+  return weightedPick(ROLE_TABLE, ROLE_TOTAL_WEIGHT);
+}
+
+function updateChains(roleKey) {
+  const replaySet  = new Set(['replay_top','replay_mid','fake_replay']);
+  const yellow7Set = new Set(['yellow7_bottom','yellow7_up','yellow7_mid']);
+  if (replaySet.has(roleKey)) {
+    gameState.replayChain++;
+    gameState.yellow7Chain = 0;
+  } else if (yellow7Set.has(roleKey)) {
+    gameState.yellow7Chain++;
+    gameState.replayChain = 0;
+  } else if (roleKey === 'gaia_bell') {
+    // ガイアベル: 連続カウントを途切れさせない
+  } else {
+    gameState.replayChain  = 0;
+    gameState.yellow7Chain = 0;
+  }
+}
 
 // ========== UTILITY + バラケ目 ==========
 
