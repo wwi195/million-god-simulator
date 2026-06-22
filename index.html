@@ -405,7 +405,90 @@ function decideGGNumber(roleKey) {
 }
 
 // ========== GAME FLOW ==========
-// (Task 6, 7 で追加)
+
+function processGame() {
+  if (gameState.phase === 'ended') return;
+
+  if (gameState.pendingFall) { endGaiaStage(); return; }
+
+  if (gameState.phase === 'chokkou') { processChokkouGame(); return; }
+  if (gameState.phase === 'z_zone')  { processZZoneGame();   return; }
+
+  // ===== GAIA フェーズ =====
+  gameState.totalGames++;
+
+  const role = rollRole();
+  updateChains(role.key);
+
+  const ggWon = rollGGSingle(role.key) || rollGGChain();
+
+  const isRare = ['yellow7_up','yellow7_mid','fake_replay','sp_role','red7_suroe'].includes(role.key);
+  const isInstantRole = (role.key === 'god_suroe' || role.key === 'red7_suroe');
+
+  if (ggWon || isInstantRole) {
+    const ggResult = decideGGNumber(role.key);
+    gameState.ggDigits = ggResult.digits;
+
+    if (ggResult.instant) {
+      gameState.phase = 'gg_won';
+      renderReels(ggResult.digits, 'win');
+      renderRole(role.key);
+      updateCounters();
+      showWinAnimation();
+    } else {
+      gameState.phase        = 'chokkou';
+      gameState.chokkouCount = 0;
+      gameState.chokkouTarget = ggResult.digits[0];
+      const disp = getChokkouDisplay(gameState.chokkouTarget);
+      renderReels(disp.tenpa, 'tenpa', disp.target);
+      renderRole(role.key);
+      updateCounters();
+      showChokkouAnim();
+    }
+    return;
+  }
+
+  // ===== GG非当選 =====
+  gameState.guaranteeGames = Math.max(0, gameState.guaranteeGames - 1);
+
+  if (gameState.guaranteeGames <= 3 && rollGuaranteeAdd(role.key)) {
+    gameState.guaranteeGames += 3;
+  }
+
+  const bDigits = generateBarakeme(isRare ? 'hot' : 'normal');
+  renderReels(bDigits, 'normal');
+  renderRole(role.key);
+  updateCounters();
+
+  if (gameState.guaranteeGames === 0 && rollFall(role.key)) {
+    gameState.pendingFall = true;
+    showFallPinch();
+  }
+}
+
+function processChokkouGame() {
+  gameState.chokkouCount++;
+  gameState.totalGames++;
+
+  if (gameState.chokkouCount < 4) {
+    const disp = getChokkouDisplay(gameState.chokkouTarget);
+    renderReels(disp.tenpa, 'tenpa', disp.target);
+    renderRole(null);
+    updateCounters();
+    showChokkouAnim();
+  } else {
+    gameState.phase = 'gg_won';
+    renderReels(gameState.ggDigits, 'win');
+    renderRole(null);
+    updateCounters();
+    showWinAnimation();
+  }
+}
+
+function endGaiaStage() {
+  gameState.phase = 'ended';
+  showFallEnd();
+}
 
 // ========== UI RENDERING ==========
 // (Task 8 で追加)
