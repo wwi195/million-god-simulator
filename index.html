@@ -261,7 +261,66 @@ const Z_ZONE_CONFIG = {
 // (Task 4 で追加)
 
 // ========== UTILITY + バラケ目 ==========
-// (Task 3 で追加)
+
+function weightedPick(table, totalWeight) {
+  const r = Math.random() * totalWeight;
+  let cum = 0;
+  for (const row of table) {
+    cum += row.weight;
+    if (r < cum) return row;
+  }
+  return table[table.length - 1];
+}
+
+function generateBarakeme(mode) {
+  const BASE = ['0','1','2','3','4','5','6','8'];
+  let result = null;
+  for (let tries = 0; tries < 500 && !result; tries++) {
+    const d = [
+      BASE[Math.floor(Math.random() * BASE.length)],
+      BASE[Math.floor(Math.random() * BASE.length)],
+      BASE[Math.floor(Math.random() * BASE.length)],
+    ];
+    if (mode === 'hot') {
+      d[Math.floor(Math.random() * 3)] = Math.random() < 0.5 ? '7' : 'V';
+    }
+    if (d[0] === d[1] && d[1] === d[2]) continue;
+    if (FORBIDDEN_BARAKEME.has(d.join(''))) continue;
+    result = d;
+  }
+  return result || ['8','2','6'];
+}
+
+function generateTenpa(targetDigit) {
+  const BASE     = ['0','1','2','3','4','5','6','8'];
+  const diffPool = BASE.filter(d => d !== targetDigit);
+  let result = null;
+  for (let tries = 0; tries < 300 && !result; tries++) {
+    const diffPos = Math.floor(Math.random() * 3);
+    const diff    = diffPool[Math.floor(Math.random() * diffPool.length)];
+    const d = [targetDigit, targetDigit, targetDigit];
+    d[diffPos] = diff;
+    if (FORBIDDEN_BARAKEME.has(d.join(''))) continue;
+    result = d;
+  }
+  if (!result) {
+    const d = [targetDigit, targetDigit, targetDigit];
+    d[0] = targetDigit === '1' ? '2' : '1';
+    result = d;
+  }
+  return result;
+}
+
+function getChokkouDisplay(chokkouTarget) {
+  if (chokkouTarget === '0') {
+    if (Math.random() < 0.75) return { tenpa: generateTenpa('0'), target: '0' };
+    const odd = ['1','3','5'][Math.floor(Math.random() * 3)];
+    return { tenpa: generateTenpa(odd), target: odd };
+  } else {
+    if (Math.random() < 0.10) return { tenpa: generateTenpa('0'), target: '0' };
+    return { tenpa: generateTenpa(chokkouTarget), target: chokkouTarget };
+  }
+}
 
 // ========== LOTTERY FUNCTIONS ==========
 // (Task 5 で追加)
