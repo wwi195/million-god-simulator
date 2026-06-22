@@ -364,7 +364,45 @@ function getChokkouDisplay(chokkouTarget) {
 }
 
 // ========== LOTTERY FUNCTIONS ==========
-// (Task 5 で追加)
+
+function rollGGSingle(roleKey) {
+  return Math.random() < (GG_SINGLE_TABLE[roleKey] ?? 0);
+}
+
+function rollGGChain() {
+  let won = false;
+  if (gameState.replayChain > 0) {
+    const idx  = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
+    if (Math.random() < REPLAY_CHAIN_RATE[idx]) won = true;
+  }
+  if (gameState.yellow7Chain > 0) {
+    const idx  = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
+    if (Math.random() < YELLOW7_CHAIN_RATE[idx]) won = true;
+  }
+  return won;
+}
+
+function rollGuaranteeAdd(roleKey) {
+  return Math.random() < (GUARANTEE_ADD_TABLE[roleKey] ?? 0);
+}
+
+function rollFall(roleKey) {
+  return Math.random() < (FALL_RATE[roleKey] ?? 0);
+}
+
+function decideGGNumber(roleKey) {
+  if (roleKey === 'god_suroe') {
+    return { digits: ['7','7','7'], instant: true };
+  }
+  if (roleKey === 'red7_suroe') {
+    const d = ['1','3','5'][Math.floor(Math.random() * 3)];
+    return { digits: [d, d, d], instant: true };
+  }
+  const d = Math.random() < 0.15
+    ? '0'
+    : ['1','3','5'][Math.floor(Math.random() * 3)];
+  return { digits: [d, d, d], instant: false };
+}
 
 // ========== GAME FLOW ==========
 // (Task 6, 7 で追加)
