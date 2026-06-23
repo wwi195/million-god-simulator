@@ -195,10 +195,12 @@ body {
     <div class="counter">
       <div class="counter-label">リプレイ連続</div>
       <div class="counter-value replay" id="cnt-replay">0</div>
+      <div class="counter-sub" id="cnt-replay-sub"></div>
     </div>
     <div class="counter">
       <div class="counter-label">黄7連続</div>
       <div class="counter-value yellow7" id="cnt-yellow7">0</div>
+      <div class="counter-sub" id="cnt-yellow7-sub"></div>
     </div>
   </div>
 
@@ -266,7 +268,7 @@ const FORBIDDEN_BARAKEME = new Set([
   '201','223','280','283',
   '324','344',
   '415','428',
-  '514',
+  '510','514',
   '634','681',
   '801','808','821','841','845','850','873','884',
 ]);
@@ -519,6 +521,15 @@ function processGame() {
   updateCounters();
 
   if (gameState.guaranteeGames === 0) {
+    const fallRate = (FALL_RATE[role.key] ?? 0) * 100;
+    if (fallRate > 0) {
+      const wEl = document.getElementById('reel-message');
+      wEl.textContent = fallRate.toFixed(1) + '% で転落抽選中';
+      wEl.style.color = 'var(--orange)';
+    }
+  }
+
+  if (gameState.guaranteeGames === 0) {
     if (rollFall(role.key)) {
       gameState.pendingFall = true;
       showFallPinch();
@@ -659,37 +670,49 @@ function renderRole(roleKey) {
     labelEl.style.webkitTextFillColor  = 'transparent';
   }
 
-  const pct = v => (v * 100).toFixed(1) + '%';
+  const pct    = v => (v * 100).toFixed(1) + '%';
   const single = GG_SINGLE_TABLE[roleKey] ?? 0;
-  let chainPct = '';
-
-  if (gameState.replayChain > 0) {
-    const idx = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
-    chainPct = '　履歴' + pct(REPLAY_CHAIN_RATE[idx]);
-  } else if (gameState.yellow7Chain > 0) {
-    const idx = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
-    chainPct = '　履歴' + pct(YELLOW7_CHAIN_RATE[idx]);
-  }
-
-  rateEl.innerHTML = '当選率：<br>' + pct(single) + chainPct;
+  rateEl.innerHTML = '当選率：<br>' + pct(single);
 }
 
 function updateCounters() {
-  document.getElementById('cnt-total').textContent    = gameState.totalGames;
-  document.getElementById('cnt-replay').textContent   = gameState.replayChain;
-  document.getElementById('cnt-yellow7').textContent  = gameState.yellow7Chain;
+  const pct = v => (v * 100).toFixed(1) + '%';
+
+  document.getElementById('cnt-total').textContent   = gameState.totalGames;
+  document.getElementById('cnt-replay').textContent  = gameState.replayChain;
+  document.getElementById('cnt-yellow7').textContent = gameState.yellow7Chain;
+
+  // 保証G数
   const gEl  = document.getElementById('cnt-guarantee');
   const gSub = document.getElementById('cnt-guarantee-sub');
   gEl.textContent = gameState.guaranteeGames;
   gEl.className   = 'counter-value guarantee' + (gameState.guaranteeGames <= 3 ? ' low' : '');
   if (gameState.guaranteeAddPct) {
-    gSub.textContent  = '加算！' + gameState.guaranteeAddPct;
-    gSub.style.color  = 'var(--orange)';
+    gSub.textContent = '加算！' + gameState.guaranteeAddPct;
+    gSub.style.color = 'var(--orange)';
   } else if (gameState.guaranteeGames <= 3) {
-    gSub.textContent  = '加算抽選中';
-    gSub.style.color  = 'var(--dim)';
+    gSub.textContent = '加算抽選中';
+    gSub.style.color = 'var(--dim)';
   } else {
-    gSub.textContent  = '';
+    gSub.textContent = '';
+  }
+
+  // リプレイ連続・黄7連続 に履歴抽選率を表示
+  const rSub = document.getElementById('cnt-replay-sub');
+  const ySub = document.getElementById('cnt-yellow7-sub');
+  if (gameState.replayChain > 0) {
+    const idx = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
+    rSub.textContent = '履歴抽選：' + pct(REPLAY_CHAIN_RATE[idx]);
+    rSub.style.color = 'var(--dim)';
+  } else {
+    rSub.textContent = '';
+  }
+  if (gameState.yellow7Chain > 0) {
+    const idx = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
+    ySub.textContent = '履歴抽選：' + pct(YELLOW7_CHAIN_RATE[idx]);
+    ySub.style.color = 'var(--dim)';
+  } else {
+    ySub.textContent = '';
   }
 }
 
@@ -734,15 +757,46 @@ function showChokkouAnim() {
 function showFakeRecovery() {
   gameState.pendingFakeFall = false;
   gameState.totalGames++;
-  const bDigits = generateBarakeme('normal');
+  gameState.guaranteeAddPct = null;
+
+  const role   = rollRole();
+  updateChains(role.key);
+  const isRare = ['yellow7_up','yellow7_mid','fake_replay','sp_role','red7_suroe'].includes(role.key);
+
+  const chainWon = rollGGChain();
+  const bDigits  = generateBarakeme(isRare ? 'hot' : 'normal');
   renderReels(bDigits, 'normal');
   document.getElementById('reel-area').classList.remove('s-pinch');
   const msgEl = document.getElementById('reel-message');
   msgEl.textContent = '転落回避！';
   msgEl.style.color = '#4da6ff';
-  document.getElementById('role-label').textContent = '転落回避';
-  document.getElementById('role-rate').innerHTML    = '';
+  renderRole(role.key);
   updateCounters();
+
+  if (chainWon) {
+    const ggResult = decideGGNumber(role.key);
+    gameState.ggDigits = ggResult.digits;
+    gameState.ggWins   = 1;
+    const r = Math.random();
+    const fakeLen = r < 0.25 ? 1 : r < 0.50 ? 2 : r < 0.75 ? 3 : null;
+    gameState.phase             = 'chokkou';
+    gameState.chokkouCount      = 0;
+    gameState.chokkouFakeLength = fakeLen;
+    gameState.chokkouTarget     = ggResult.digits[0];
+    gameState.chokkouRoleKey    = role.key;
+    if (fakeLen !== null) gameState.ggDigits = null;
+    return;
+  }
+
+  if (gameState.guaranteeGames === 0) {
+    if (rollFall(role.key)) {
+      gameState.pendingFall = true;
+      showFallPinch();
+    } else if (Math.random() < 0.05) {
+      gameState.pendingFakeFall = true;
+      showFallPinch();
+    }
+  }
 }
 
 function showFallPinch() {
