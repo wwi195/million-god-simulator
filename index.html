@@ -73,11 +73,14 @@ body {
   letter-spacing: 1px; min-height: 20px; margin-top: 8px; color: var(--dim);
 }
 .role-display {
-  background: var(--card); border-radius: 8px; padding: 8px 12px;
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 13px; color: #aaa; margin-bottom: 10px;
+  display: flex; gap: 8px; margin-bottom: 10px;
 }
-#role-rate { text-align: right; color: var(--dim); }
+.role-box {
+  flex: 1; background: var(--card); border-radius: 8px;
+  padding: 8px 10px; text-align: center;
+  font-size: 13px; color: #aaa;
+}
+#role-rate { color: var(--dim); }
 .counters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .counter { background: var(--card); border-radius: 10px; padding: 10px 8px; text-align: center; }
 .counter-label { font-size: 10px; color: var(--dim); margin-bottom: 4px; }
@@ -174,8 +177,8 @@ body {
   </div>
 
   <div class="role-display" id="role-display">
-    <span id="role-label">— 待機中 —</span>
-    <span id="role-rate"></span>
+    <div class="role-box" id="role-label">— 待機中 —</div>
+    <div class="role-box" id="role-rate"></div>
   </div>
 
   <div class="counters">
