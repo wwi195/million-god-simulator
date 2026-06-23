@@ -736,7 +736,16 @@ function renderRole(roleKey) {
   }
 
   const row = ROLE_TABLE.find(r => r.key === roleKey);
-  labelEl.textContent = row ? row.label : '—';
+
+  // 成立確率を分数で計算
+  const fracStr = (() => {
+    if (!row) return '';
+    const n = ROLE_TOTAL_WEIGHT / row.weight;
+    if (n >= 1000) return '1/' + Math.round(n).toLocaleString();
+    if (n >= 100)  return '1/' + Math.round(n);
+    if (n >= 10)   return '1/' + n.toFixed(1);
+    return '1/' + n.toFixed(2);
+  })();
 
   // 色設定をリセット
   labelEl.style.cssText = '';
@@ -750,6 +759,11 @@ function renderRole(roleKey) {
     labelEl.style.webkitBackgroundClip = 'text';
     labelEl.style.webkitTextFillColor  = 'transparent';
   }
+
+  const fracSpan = fracStr
+    ? '<span style="font-size:10px;font-weight:normal;opacity:0.65;margin-left:6px;">' + fracStr + '</span>'
+    : '';
+  labelEl.innerHTML = (row ? row.label : '—') + fracSpan;
 
   const pct    = v => (v * 100).toFixed(1) + '%';
   const single = GG_SINGLE_TABLE[roleKey] ?? 0;
