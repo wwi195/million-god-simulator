@@ -286,6 +286,7 @@ let gameState = {
   chokkouFakeLength: null,
   chokkouRoleKey:    null,
   ggDigits:          null,
+  ggWins:            0,
   pendingFall:       false,
   pendingFakeFall:   false,
 };
@@ -296,7 +297,7 @@ function resetGameState() {
     replayChain: 0, yellow7Chain: 0,
     phase: 'gaia', chokkouCount: 0,
     chokkouTarget: null, chokkouFakeLength: null, chokkouRoleKey: null,
-    ggDigits: null, pendingFall: false, pendingFakeFall: false,
+    ggDigits: null, ggWins: 0, pendingFall: false, pendingFakeFall: false,
   };
 }
 
@@ -456,6 +457,7 @@ function processGame() {
   if (ggWon || isInstantRole) {
     const ggResult = decideGGNumber(role.key);
     gameState.ggDigits = ggResult.digits;
+    gameState.ggWins   = 1;
 
     if (ggResult.instant) {
       gameState.phase = 'gg_won';
@@ -508,6 +510,15 @@ function processChokkouGame() {
   gameState.chokkouCount++;
   gameState.totalGames++;
 
+  // 前兆中も役抽選・チェーン更新を行う
+  const role = rollRole();
+  updateChains(role.key);
+
+  // チェーン抽選でGG追加獲得（単発抽選は行わない）
+  if (rollGGChain()) {
+    gameState.ggWins++;
+  }
+
   const isFake = gameState.chokkouFakeLength !== null;
   const ended  = isFake
     ? gameState.chokkouCount >= gameState.chokkouFakeLength
@@ -516,13 +527,13 @@ function processChokkouGame() {
   if (!ended) {
     const disp = getChokkouDisplay(gameState.chokkouTarget);
     renderReels(disp.tenpa, 'tenpa', disp.target);
-    renderRole(null);
+    renderRole(role.key);
     updateCounters();
     showChokkouAnim();
   } else if (!isFake) {
     gameState.phase = 'gg_won';
     renderReels(gameState.ggDigits, 'win');
-    renderRole(null);
+    renderRole(role.key);
     updateCounters();
     showWinAnimation();
   } else {
@@ -530,7 +541,7 @@ function processChokkouGame() {
     gameState.chokkouFakeLength = null;
     const bDigits = generateBarakeme('normal');
     renderReels(bDigits, 'normal');
-    renderRole(gameState.chokkouRoleKey);
+    renderRole(role.key);
     document.getElementById('reel-message').textContent = 'ガセ前兆';
     updateCounters();
   }
