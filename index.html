@@ -494,12 +494,13 @@ function processGame() {
   updateCounters();
 
   if (gameState.guaranteeGames === 0) {
-    if (Math.random() < 0.8) {
+    if (rollFall(role.key)) {
       gameState.pendingFall = true;
-    } else {
+      showFallPinch();
+    } else if (Math.random() < 0.05) {
       gameState.pendingFakeFall = true;
+      showFallPinch();
     }
-    showFallPinch();
   }
 }
 
