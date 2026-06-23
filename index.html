@@ -218,17 +218,18 @@ body {
 <script>
 // ========== CONSTANTS ==========
 const ROLE_TABLE = [
-  { key: 'hazure',         label: 'ハズレ',           weight: 18.7384 },
-  { key: 'replay_top',     label: '上段リプレイ',       weight: 12.6582 },
-  { key: 'yellow7_bottom', label: '下段黄7',           weight:  5.4348 },
-  { key: 'gaia_bell',      label: 'ガイアベル',         weight:  2.6596 },
-  { key: 'replay_mid',     label: '中段リプレイ',       weight:  0.9158 },
-  { key: 'yellow7_up',     label: '右上がり黄7',        weight:  0.5371 },
-  { key: 'fake_replay',    label: '赤7フェイク',        weight:  0.1068 },
-  { key: 'yellow7_mid',    label: '中段黄7',           weight:  0.1038 },
-  { key: 'red7_suroe',     label: '赤7揃い',           weight:  0.0145 },
-  { key: 'god_suroe',      label: 'GOD揃い',           weight:  0.0061 },
-  { key: 'sp_role',        label: 'SP役',              weight:  0.0015 },
+  { key: 'hazure_oshi',    label: 'はずれ①',    weight: 1/1.7,    den: 1.7    },
+  { key: 'hazure_normal',  label: 'はずれ②',    weight: 1/5.2,    den: 5.2    },
+  { key: 'replay_top',     label: '上段リプレイ', weight: 1/7.9,    den: 7.9    },
+  { key: 'yellow7_bottom', label: '下段黄7',     weight: 1/18.4,   den: 18.4   },
+  { key: 'gaia_bell',      label: 'ガイアベル',  weight: 1/37.6,   den: 37.6   },
+  { key: 'replay_mid',     label: '中段リプレイ', weight: 1/109.2,  den: 109.2  },
+  { key: 'yellow7_up',     label: '右上がり黄7', weight: 1/186.2,  den: 186.2  },
+  { key: 'fake_replay',    label: '赤7フェイク', weight: 1/936.2,  den: 936.2  },
+  { key: 'yellow7_mid',    label: '中段黄7',    weight: 1/963.8,  den: 963.8  },
+  { key: 'red7_suroe',     label: '赤7揃い',    weight: 1/6900,   den: 6900   },
+  { key: 'god_suroe',      label: 'GOD揃い',    weight: 1/16384,  den: 16384  },
+  { key: 'sp_role',        label: 'SP役',       weight: 1/65536,  den: 65536  },
 ];
 const ROLE_TOTAL_WEIGHT = ROLE_TABLE.reduce((s, r) => s + r.weight, 0);
 
@@ -247,7 +248,8 @@ const YELLOW7_CHAIN_P = (() => {
 })();
 
 const GG_SINGLE_TABLE = {
-  hazure:         0.016,
+  hazure_oshi:    0.016,
+  hazure_normal:  0.016,
   replay_top:     0.016,
   gaia_bell:      0.016,
   yellow7_bottom: 0.016,
@@ -264,7 +266,8 @@ const REPLAY_CHAIN_RATE  = [0, 0.059, 0.059, 0.25, 0.75, 1.0];
 const YELLOW7_CHAIN_RATE = [0, 0.012, 0.012, 0.102, 0.50, 1.0];
 
 const GUARANTEE_ADD_TABLE = {
-  hazure:         0.053,
+  hazure_oshi:    0.053,
+  hazure_normal:  0.053,
   replay_top:     0.053,
   gaia_bell:      0.053,
   yellow7_bottom: 0.053,
@@ -273,7 +276,7 @@ const GUARANTEE_ADD_TABLE = {
   yellow7_up:     1.0,
 };
 
-const FALL_RATE = { hazure: 0.129 };
+const FALL_RATE = { hazure_oshi: 0.129, hazure_normal: 0.129 };
 
 const FORBIDDEN_BARAKEME = new Set([
   '135','315','468','526','354','448','664',
@@ -737,14 +740,11 @@ function renderRole(roleKey) {
 
   const row = ROLE_TABLE.find(r => r.key === roleKey);
 
-  // 成立確率を分数で計算
+  // 成立確率を分数で表示（den フィールドの値をそのまま使用）
   const fracStr = (() => {
-    if (!row) return '';
-    const n = ROLE_TOTAL_WEIGHT / row.weight;
-    if (n >= 1000) return '1/' + Math.round(n).toLocaleString();
-    if (n >= 100)  return '1/' + Math.round(n);
-    if (n >= 10)   return '1/' + n.toFixed(1);
-    return '1/' + n.toFixed(2);
+    if (!row || row.den == null) return '';
+    const n = row.den;
+    return '1/' + (Number.isInteger(n) ? n.toLocaleString() : n);
   })();
 
   // 色設定をリセット
