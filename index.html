@@ -82,6 +82,7 @@ body {
 }
 #role-rate { color: var(--dim); }
 .counters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.counter-sub { font-size: 10px; margin-top: 3px; min-height: 14px; }
 .counter { background: var(--card); border-radius: 10px; padding: 10px 8px; text-align: center; }
 .counter-label { font-size: 10px; color: var(--dim); margin-bottom: 4px; }
 .counter-value { font-size: 24px; font-weight: bold; }
@@ -189,6 +190,7 @@ body {
     <div class="counter">
       <div class="counter-label">保証G数</div>
       <div class="counter-value guarantee" id="cnt-guarantee">9</div>
+      <div class="counter-sub" id="cnt-guarantee-sub"></div>
     </div>
     <div class="counter">
       <div class="counter-label">リプレイ連続</div>
@@ -287,6 +289,7 @@ let gameState = {
   chokkouRoleKey:    null,
   ggDigits:          null,
   ggWins:            0,
+  guaranteeAddPct:   null,
   pendingFall:       false,
   pendingFakeFall:   false,
 };
@@ -297,7 +300,8 @@ function resetGameState() {
     replayChain: 0, yellow7Chain: 0,
     phase: 'gaia', chokkouCount: 0,
     chokkouTarget: null, chokkouFakeLength: null, chokkouRoleKey: null,
-    ggDigits: null, ggWins: 0, pendingFall: false, pendingFakeFall: false,
+    ggDigits: null, ggWins: 0,
+    guaranteeAddPct: null, pendingFall: false, pendingFakeFall: false,
   };
 }
 
@@ -500,10 +504,13 @@ function processGame() {
   }
 
   // ===== GG非当選 =====
-  gameState.guaranteeGames = Math.max(0, gameState.guaranteeGames - 1);
+  gameState.guaranteeAddPct = null;
+  gameState.guaranteeGames  = Math.max(0, gameState.guaranteeGames - 1);
 
   if (gameState.guaranteeGames <= 3 && rollGuaranteeAdd(role.key)) {
-    gameState.guaranteeGames += 3;
+    const addRate = GUARANTEE_ADD_TABLE[role.key] ?? 0;
+    gameState.guaranteeGames    += 3;
+    gameState.guaranteeAddPct    = (addRate * 100).toFixed(1) + '%';
   }
 
   const bDigits = generateBarakeme(isRare ? 'hot' : 'normal');
@@ -639,6 +646,19 @@ function renderRole(roleKey) {
   const row = ROLE_TABLE.find(r => r.key === roleKey);
   labelEl.textContent = row ? row.label : '—';
 
+  // 色設定をリセット
+  labelEl.style.cssText = '';
+
+  const RARE_RED  = new Set(['replay_mid','yellow7_up','yellow7_mid']);
+  const CONFIRMED = new Set(['god_suroe','red7_suroe','sp_role']);
+  if (RARE_RED.has(roleKey)) {
+    labelEl.style.color = 'var(--red)';
+  } else if (CONFIRMED.has(roleKey)) {
+    labelEl.style.background         = 'linear-gradient(90deg,#ff8800,#ffff00,#00ff88,#0088ff,#ff0088)';
+    labelEl.style.webkitBackgroundClip = 'text';
+    labelEl.style.webkitTextFillColor  = 'transparent';
+  }
+
   const pct = v => (v * 100).toFixed(1) + '%';
   const single = GG_SINGLE_TABLE[roleKey] ?? 0;
   let chainPct = '';
@@ -658,9 +678,19 @@ function updateCounters() {
   document.getElementById('cnt-total').textContent    = gameState.totalGames;
   document.getElementById('cnt-replay').textContent   = gameState.replayChain;
   document.getElementById('cnt-yellow7').textContent  = gameState.yellow7Chain;
-  const gEl = document.getElementById('cnt-guarantee');
-  gEl.textContent  = gameState.guaranteeGames;
-  gEl.className    = 'counter-value guarantee' + (gameState.guaranteeGames <= 3 ? ' low' : '');
+  const gEl  = document.getElementById('cnt-guarantee');
+  const gSub = document.getElementById('cnt-guarantee-sub');
+  gEl.textContent = gameState.guaranteeGames;
+  gEl.className   = 'counter-value guarantee' + (gameState.guaranteeGames <= 3 ? ' low' : '');
+  if (gameState.guaranteeAddPct) {
+    gSub.textContent  = '加算！' + gameState.guaranteeAddPct;
+    gSub.style.color  = 'var(--orange)';
+  } else if (gameState.guaranteeGames <= 3) {
+    gSub.textContent  = '加算抽選中';
+    gSub.style.color  = 'var(--dim)';
+  } else {
+    gSub.textContent  = '';
+  }
 }
 
 // ========== Z ZONE SKELETON ==========
