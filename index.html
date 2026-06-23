@@ -224,13 +224,27 @@ const ROLE_TABLE = [
   { key: 'gaia_bell',      label: 'ガイアベル',         weight:  2.6596 },
   { key: 'replay_mid',     label: '中段リプレイ',       weight:  0.9158 },
   { key: 'yellow7_up',     label: '右上がり黄7',        weight:  0.5371 },
-  { key: 'fake_replay',    label: '赤7フェイクリプレイ', weight:  0.1068 },
+  { key: 'fake_replay',    label: '赤7フェイク',        weight:  0.1068 },
   { key: 'yellow7_mid',    label: '中段黄7',           weight:  0.1038 },
   { key: 'red7_suroe',     label: '赤7揃い',           weight:  0.0145 },
   { key: 'god_suroe',      label: 'GOD揃い',           weight:  0.0061 },
   { key: 'sp_role',        label: 'SP役',              weight:  0.0015 },
 ];
 const ROLE_TOTAL_WEIGHT = ROLE_TABLE.reduce((s, r) => s + r.weight, 0);
+
+// N連続確率計算（リプレイ・黄7それぞれの連続到達確率）
+const REPLAY_CHAIN_P = (() => {
+  const w = ['replay_top','replay_mid'].reduce(
+    (s,k) => s + (ROLE_TABLE.find(r=>r.key===k)?.weight ?? 0), 0);
+  const p = w / ROLE_TOTAL_WEIGHT;
+  return n => Math.pow(p, n);
+})();
+const YELLOW7_CHAIN_P = (() => {
+  const w = ['yellow7_bottom','yellow7_up','yellow7_mid'].reduce(
+    (s,k) => s + (ROLE_TABLE.find(r=>r.key===k)?.weight ?? 0), 0);
+  const p = w / ROLE_TOTAL_WEIGHT;
+  return n => Math.pow(p, n);
+})();
 
 const GG_SINGLE_TABLE = {
   hazure:         0.016,
@@ -311,7 +325,7 @@ function rollRole() {
 }
 
 function updateChains(roleKey) {
-  const replaySet  = new Set(['replay_top','replay_mid','fake_replay']);
+  const replaySet  = new Set(['replay_top','replay_mid']);
   const yellow7Set = new Set(['yellow7_bottom','yellow7_up','yellow7_mid']);
   if (replaySet.has(roleKey)) {
     gameState.replayChain++;
@@ -527,7 +541,13 @@ function processGame() {
     gameState.guaranteeAddPct    = (addRate * 100).toFixed(1) + '%';
   }
 
-  const bDigits = generateBarakeme(isRare ? 'hot' : 'normal');
+  let bDigits;
+  if (role.key === 'fake_replay') {
+    const t = ['1','3','5'][Math.floor(Math.random() * 3)];
+    bDigits = generateTenpa(t);
+  } else {
+    bDigits = generateBarakeme(isRare ? 'hot' : 'normal');
+  }
   renderReels(bDigits, 'normal');
   renderRole(role.key);
   updateCounters();
@@ -732,22 +752,32 @@ function updateCounters() {
     gSub.textContent = '';
   }
 
-  // リプレイ連続・黄7連続 に履歴抽選率を表示
+  // リプレイ連続・黄7連続 に履歴抽選率＋N連続確率を表示
+  const chainPctStr = v => {
+    const p = v * 100;
+    return p >= 1 ? p.toFixed(1) + '%' : p >= 0.01 ? p.toFixed(2) + '%' : p.toFixed(3) + '%';
+  };
   const rSub = document.getElementById('cnt-replay-sub');
   const ySub = document.getElementById('cnt-yellow7-sub');
   if (gameState.replayChain > 0) {
-    const idx = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
-    rSub.textContent = '履歴抽選：' + pct(REPLAY_CHAIN_RATE[idx]);
+    const chain = gameState.replayChain;
+    const idx   = Math.min(chain, REPLAY_CHAIN_RATE.length - 1);
+    let html = '履歴抽選：' + pct(REPLAY_CHAIN_RATE[idx]);
+    if (chain >= 2) html += '<br>' + chain + '連続確率：' + chainPctStr(REPLAY_CHAIN_P(chain));
+    rSub.innerHTML   = html;
     rSub.style.color = 'var(--dim)';
   } else {
-    rSub.textContent = '';
+    rSub.innerHTML = '';
   }
   if (gameState.yellow7Chain > 0) {
-    const idx = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
-    ySub.textContent = '履歴抽選：' + pct(YELLOW7_CHAIN_RATE[idx]);
+    const chain = gameState.yellow7Chain;
+    const idx   = Math.min(chain, YELLOW7_CHAIN_RATE.length - 1);
+    let html = '履歴抽選：' + pct(YELLOW7_CHAIN_RATE[idx]);
+    if (chain >= 2) html += '<br>' + chain + '連続確率：' + chainPctStr(YELLOW7_CHAIN_P(chain));
+    ySub.innerHTML   = html;
     ySub.style.color = 'var(--dim)';
   } else {
-    ySub.textContent = '';
+    ySub.innerHTML = '';
   }
 }
 
