@@ -276,6 +276,7 @@ let gameState = {
   chokkouCount:      0,
   chokkouTarget:     null,
   chokkouFakeLength: null,
+  chokkouRoleKey:    null,
   ggDigits:          null,
   pendingFall:       false,
 };
@@ -285,7 +286,7 @@ function resetGameState() {
     totalGames: 0, guaranteeGames: 9,
     replayChain: 0, yellow7Chain: 0,
     phase: 'gaia', chokkouCount: 0,
-    chokkouTarget: null, chokkouFakeLength: null,
+    chokkouTarget: null, chokkouFakeLength: null, chokkouRoleKey: null,
     ggDigits: null, pendingFall: false,
   };
 }
@@ -456,6 +457,7 @@ function processGame() {
       gameState.chokkouCount      = 0;
       gameState.chokkouFakeLength = fakeLen;
       gameState.chokkouTarget     = ggResult.digits[0];
+      gameState.chokkouRoleKey    = role.key;
       if (fakeLen !== null) gameState.ggDigits = null;
       const disp = getChokkouDisplay(gameState.chokkouTarget);
       renderReels(disp.tenpa, 'tenpa', disp.target);
@@ -510,7 +512,8 @@ function processChokkouGame() {
     gameState.chokkouFakeLength = null;
     const bDigits = generateBarakeme('normal');
     renderReels(bDigits, 'normal');
-    document.getElementById('role-display').textContent = '— ガセ前兆 —';
+    renderRole(gameState.chokkouRoleKey);
+    document.getElementById('reel-message').textContent = 'ガセ前兆';
     updateCounters();
   }
 }
