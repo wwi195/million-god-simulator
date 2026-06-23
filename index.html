@@ -381,14 +381,11 @@ function generateTenpa(targetDigit) {
 }
 
 function getChokkouDisplay(chokkouTarget) {
-  if (chokkouTarget === '0') {
-    if (Math.random() < 0.75) return { tenpa: generateTenpa('0'), target: '0' };
-    const odd = ['1','3','5'][Math.floor(Math.random() * 3)];
-    return { tenpa: generateTenpa(odd), target: odd };
-  } else {
-    if (Math.random() < 0.10) return { tenpa: generateTenpa('0'), target: '0' };
-    return { tenpa: generateTenpa(chokkouTarget), target: chokkouTarget };
-  }
+  // 前兆中は常に奇数テンパイ（0テンパイなし）
+  const displayTarget = chokkouTarget === '0'
+    ? ['1','3','5'][Math.floor(Math.random() * 3)]
+    : chokkouTarget;
+  return { tenpa: generateTenpa(displayTarget), target: displayTarget };
 }
 
 // ========== LOTTERY FUNCTIONS ==========
@@ -454,6 +451,8 @@ function processGame() {
   const isRare = ['yellow7_up','yellow7_mid','fake_replay','sp_role','red7_suroe'].includes(role.key);
   const isInstantRole = (role.key === 'god_suroe' || role.key === 'red7_suroe');
 
+  const isRareForChokkou = ['replay_mid', 'yellow7_up'].includes(role.key);
+
   if (ggWon || isInstantRole) {
     const ggResult = decideGGNumber(role.key);
     gameState.ggDigits = ggResult.digits;
@@ -480,6 +479,23 @@ function processGame() {
       updateCounters();
       showChokkouAnim();
     }
+    return;
+  }
+
+  // ===== レア役ガセ前兆（GG非当選でも必ず前兆突入）=====
+  if (isRareForChokkou) {
+    const fakeLen    = Math.ceil(Math.random() * 3);
+    const fakeTarget = ['1','3','5'][Math.floor(Math.random() * 3)];
+    gameState.phase             = 'chokkou';
+    gameState.chokkouCount      = 0;
+    gameState.chokkouFakeLength = fakeLen;
+    gameState.chokkouTarget     = fakeTarget;
+    gameState.chokkouRoleKey    = role.key;
+    const disp = getChokkouDisplay(fakeTarget);
+    renderReels(disp.tenpa, 'tenpa', disp.target);
+    renderRole(role.key);
+    updateCounters();
+    showChokkouAnim();
     return;
   }
 
