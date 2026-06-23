@@ -304,6 +304,7 @@ let gameState = {
   chokkouRoleKey:    null,
   ggDigits:          null,
   ggWins:            0,
+  ggTrigger:         null,
   guaranteeAddPct:   null,
   pendingFall:       false,
   pendingFakeFall:   false,
@@ -315,7 +316,7 @@ function resetGameState() {
     replayChain: 0, yellow7Chain: 0,
     phase: 'gaia', chokkouCount: 0,
     chokkouTarget: null, chokkouRoleKey: null,
-    ggDigits: null, ggWins: 0,
+    ggDigits: null, ggWins: 0, ggTrigger: null,
     guaranteeAddPct: null, pendingFall: false, pendingFakeFall: false,
   };
 }
@@ -334,8 +335,8 @@ function updateChains(roleKey) {
     gameState.yellow7Chain++;
     gameState.replayChain = 0;
   } else if (roleKey === 'gaia_bell') {
-    if (gameState.replayChain  > 0) gameState.replayChain++;
-    if (gameState.yellow7Chain > 0) gameState.yellow7Chain++;
+    gameState.replayChain++;
+    gameState.yellow7Chain++;
   } else {
     gameState.replayChain  = 0;
     gameState.yellow7Chain = 0;
@@ -417,16 +418,34 @@ function rollGGSingle(roleKey) {
 }
 
 function rollGGChain() {
-  let won = false;
   if (gameState.replayChain > 0) {
-    const idx  = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
-    if (Math.random() < REPLAY_CHAIN_RATE[idx]) won = true;
+    const idx = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
+    if (Math.random() < REPLAY_CHAIN_RATE[idx]) return 'replay';
   }
   if (gameState.yellow7Chain > 0) {
-    const idx  = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
-    if (Math.random() < YELLOW7_CHAIN_RATE[idx]) won = true;
+    const idx = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
+    if (Math.random() < YELLOW7_CHAIN_RATE[idx]) return 'yellow7';
   }
-  return won;
+  return null;
+}
+
+function buildGGTrigger(roleKey, singleWon, chainType) {
+  if (singleWon) {
+    const rate  = (GG_SINGLE_TABLE[roleKey] ?? 0) * 100;
+    const label = ROLE_TABLE.find(r => r.key === roleKey)?.label ?? roleKey;
+    return label + ' ' + rate.toFixed(1) + '% で当選';
+  }
+  if (chainType === 'replay') {
+    const n   = gameState.replayChain;
+    const idx = Math.min(n, REPLAY_CHAIN_RATE.length - 1);
+    return 'リプレイ' + n + '連 ' + (REPLAY_CHAIN_RATE[idx] * 100).toFixed(1) + '% で当選';
+  }
+  if (chainType === 'yellow7') {
+    const n   = gameState.yellow7Chain;
+    const idx = Math.min(n, YELLOW7_CHAIN_RATE.length - 1);
+    return '黄7 ' + n + '連 ' + (YELLOW7_CHAIN_RATE[idx] * 100).toFixed(1) + '% で当選';
+  }
+  return '';
 }
 
 function rollGuaranteeAdd(roleKey) {
@@ -468,7 +487,9 @@ function processGame() {
   const role = rollRole();
   updateChains(role.key);
 
-  const ggWon = rollGGSingle(role.key) || rollGGChain();
+  const singleWon  = rollGGSingle(role.key);
+  const chainResult = rollGGChain();
+  const ggWon      = singleWon || !!chainResult;
 
   const isRare = ['yellow7_up','yellow7_mid','fake_replay','sp_role','red7_suroe'].includes(role.key);
   const isInstantRole = (role.key === 'god_suroe' || role.key === 'red7_suroe');
@@ -477,8 +498,9 @@ function processGame() {
 
   if (ggWon || isInstantRole) {
     const ggResult = decideGGNumber(role.key);
-    gameState.ggDigits = ggResult.digits;
-    gameState.ggWins   = 1;
+    gameState.ggDigits  = ggResult.digits;
+    gameState.ggWins    = 1;
+    gameState.ggTrigger = buildGGTrigger(role.key, singleWon, chainResult);
 
     if (ggResult.instant) {
       gameState.phase = 'gg_won';
@@ -586,15 +608,16 @@ function processChokkouGame() {
   }
 
   // GG抽選（単発・チェーン両方）
-  const singleWon = rollGGSingle(role.key);
-  const chainWon  = rollGGChain();
-  if (singleWon || chainWon) {
+  const singleWon   = rollGGSingle(role.key);
+  const chainResult = rollGGChain();
+  if (singleWon || chainResult) {
     if (gameState.ggWins === 0) {
-      // 初当選 → 数字決定
+      // 初当選 → 数字決定・契機保存
       const ggResult = decideGGNumber(role.key);
       gameState.ggDigits      = ggResult.digits;
       gameState.ggWins        = 1;
       gameState.chokkouTarget = ggResult.digits[0];
+      gameState.ggTrigger     = buildGGTrigger(role.key, singleWon, chainResult);
     } else {
       gameState.ggWins++;
     }
@@ -688,8 +711,11 @@ function renderReels(digits, mode, tenpaDigit) {
       msgEl.textContent  = '— Zゾーン突入 —';
       msgEl.style.color  = '#cc0000';
     } else {
-      msgEl.textContent  = '★ GG当選！ ★';
-      msgEl.style.color  = '#ff8800';
+      const trig = gameState.ggTrigger
+        ? '<br><span style="font-size:10px;font-weight:normal;opacity:0.75;">' + gameState.ggTrigger + '</span>'
+        : '';
+      msgEl.innerHTML   = '★ GG当選！ ★' + trig;
+      msgEl.style.color = '#ff8800';
     }
   } else if (mode === 'tenpa') {
     msgEl.textContent = '前兆中…';
@@ -828,8 +854,8 @@ function showFakeRecovery() {
   updateChains(role.key);
   const isRare = ['yellow7_up','yellow7_mid','fake_replay','sp_role','red7_suroe'].includes(role.key);
 
-  const chainWon = rollGGChain();
-  const bDigits  = generateBarakeme(isRare ? 'hot' : 'normal');
+  const chainResult = rollGGChain();
+  const bDigits     = generateBarakeme(isRare ? 'hot' : 'normal');
   renderReels(bDigits, 'normal');
   document.getElementById('reel-area').classList.remove('s-pinch');
   const msgEl = document.getElementById('reel-message');
@@ -838,10 +864,11 @@ function showFakeRecovery() {
   renderRole(role.key);
   updateCounters();
 
-  if (chainWon) {
+  if (chainResult) {
     const ggResult = decideGGNumber(role.key);
     gameState.ggDigits       = ggResult.digits;
     gameState.ggWins         = 1;
+    gameState.ggTrigger      = buildGGTrigger(role.key, false, chainResult);
     gameState.phase          = 'chokkou';
     gameState.chokkouCount   = 0;
     gameState.chokkouTarget  = ggResult.digits[0];
