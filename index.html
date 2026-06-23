@@ -287,6 +287,7 @@ let gameState = {
   chokkouRoleKey:    null,
   ggDigits:          null,
   pendingFall:       false,
+  pendingFakeFall:   false,
 };
 
 function resetGameState() {
@@ -295,7 +296,7 @@ function resetGameState() {
     replayChain: 0, yellow7Chain: 0,
     phase: 'gaia', chokkouCount: 0,
     chokkouTarget: null, chokkouFakeLength: null, chokkouRoleKey: null,
-    ggDigits: null, pendingFall: false,
+    ggDigits: null, pendingFall: false, pendingFakeFall: false,
   };
 }
 
@@ -435,7 +436,8 @@ function decideGGNumber(roleKey) {
 function processGame() {
   if (gameState.phase === 'ended') return;
 
-  if (gameState.pendingFall) { endGaiaStage(); return; }
+  if (gameState.pendingFall)     { endGaiaStage();       return; }
+  if (gameState.pendingFakeFall) { showFakeRecovery();   return; }
 
   if (gameState.phase === 'chokkou') { processChokkouGame(); return; }
   if (gameState.phase === 'z_zone')  { processZZoneGame();   return; }
@@ -491,8 +493,12 @@ function processGame() {
   renderRole(role.key);
   updateCounters();
 
-  if (gameState.guaranteeGames === 0 && rollFall(role.key)) {
-    gameState.pendingFall = true;
+  if (gameState.guaranteeGames === 0) {
+    if (Math.random() < 0.8) {
+      gameState.pendingFall = true;
+    } else {
+      gameState.pendingFakeFall = true;
+    }
     showFallPinch();
   }
 }
@@ -665,6 +671,20 @@ function showWinAnimation() {
 
 function showChokkouAnim() {
   animateReels('anim-pop');
+}
+
+function showFakeRecovery() {
+  gameState.pendingFakeFall = false;
+  gameState.totalGames++;
+  const bDigits = generateBarakeme('normal');
+  renderReels(bDigits, 'normal');
+  document.getElementById('reel-area').classList.remove('s-pinch');
+  const msgEl = document.getElementById('reel-message');
+  msgEl.textContent = '転落回避！';
+  msgEl.style.color = '#4da6ff';
+  document.getElementById('role-label').textContent = '転落回避';
+  document.getElementById('role-rate').innerHTML    = '';
+  updateCounters();
 }
 
 function showFallPinch() {
