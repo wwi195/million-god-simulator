@@ -17,6 +17,38 @@
   --dim: #6c757d;
   --border: #333355;
 }
+/* Z-ZONE：黒金ベース */
+body.z-active {
+  --bg:    #1c1800;
+  --card:  #272100;
+  --card2: #1f1a00;
+  --border: #3d3500;
+  --dim:   #8a7d40;
+}
+body.z-active #app {
+  box-shadow: 0 0 40px rgba(255,210,0,0.12);
+}
+
+/* Z-GAME：黄色全開 */
+body.z-game-active {
+  --bg:    #3a2c00;
+  --card:  #4e3c00;
+  --card2: #402f00;
+  --border: #7a6000;
+  --dim:   #c8a040;
+}
+body.z-game-active #app {
+  box-shadow: 0 0 80px rgba(255,204,0,0.55), 0 0 160px rgba(255,180,0,0.25);
+  border: 1px solid rgba(255,204,0,0.25);
+  border-radius: 20px;
+}
+/* 全体に薄黄色オーバーレイ */
+#z-game-tint {
+  position: fixed; inset: 0;
+  background: rgba(255,200,0,0.07);
+  pointer-events: none; z-index: 10; display: none;
+}
+body.z-game-active #z-game-tint { display: block; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--bg);
@@ -61,6 +93,18 @@ body {
 .reel.s-tenpa .reel-digit,
 .reel.s-hot .reel-digit { color: var(--orange); text-shadow: 0 0 12px var(--orange); }
 .reel-area.s-pinch { border: 2px solid var(--orange); box-shadow: 0 0 20px rgba(255,136,0,0.3); }
+
+/* Z-ZONE/Z-GAME モード：リール非表示＋剣を大きく黄色表示 */
+.reel-area.z-mode .reels      { display: none; }
+.reel-area.z-mode .reel-message { display: none; }
+.reel-area.z-mode .sword-icon {
+  height: 110px; opacity: 1; overflow: visible;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0;
+}
+.reel-area.z-mode .sword-icon svg { width: 54px; height: 66px; }
+.reel-area.z-mode .sword-icon svg line   { stroke: #ffcc00 !important; }
+.reel-area.z-mode .sword-icon svg polygon { fill: #ffcc00 !important; }
 .god-labels {
   display: flex; justify-content: space-around;
   margin-top: 2px; height: 0; overflow: hidden; opacity: 0;
@@ -114,11 +158,19 @@ body {
 }
 @keyframes flashRed    { 0% { background: rgba(255,51,85,0.55); } 100% { background: transparent; } }
 @keyframes flashOrange { 0% { background: rgba(255,136,0,0.45); } 100% { background: transparent; } }
+@keyframes flashZGame  {
+  0%   { background: rgba(255,220,0,0.96); }
+  18%  { background: rgba(255,220,0,0.55); }
+  38%  { background: rgba(255,220,0,0.88); }
+  62%  { background: rgba(255,220,0,0.40); }
+  100% { background: transparent; }
+}
 .reel.anim-drop { animation: reelDrop 0.35s ease-out; }
 .reel.anim-pop  { animation: reelPop  0.3s ease-out; }
 .overlay { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
 .overlay.flash-red    { animation: flashRed    0.5s ease-out forwards; }
 .overlay.flash-orange { animation: flashOrange 0.4s ease-out forwards; }
+.overlay.flash-zgame  { animation: flashZGame  1.1s ease-out forwards; }
 .end-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -143,6 +195,59 @@ body {
 }
 .btn-back:hover { border-color: #aaa; color: #ccc; }
 .end-overlay.visible .btn-back { opacity: 1; }
+
+/* ===== Z-ZONE / Z-GAME / RESULT ===== */
+.z-panel { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 10px; text-align: center; }
+.z-phase-title { font-size: 20px; font-weight: 900; letter-spacing: 4px; margin-bottom: 14px; }
+.z-zone-color { color: #cc0000; text-shadow: 0 0 14px rgba(204,0,0,0.6); }
+.z-game-color {
+  background: linear-gradient(90deg,#ff8800,#ffcc00,#00ff88);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.z-coins-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 14px; }
+.z-coin {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%, #ffe97a, #c89000);
+  border: 2px solid #ffcc00; box-shadow: 0 0 8px rgba(255,204,0,0.5);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.z-coin.spent { opacity: 0.12; transform: scale(0.8); box-shadow: none; }
+.z-chain-line { font-size: 22px; font-weight: 900; color: #ffcc00; min-height: 30px; margin-bottom: 8px; }
+.z-info-row { font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+.z-info-val { font-weight: bold; color: var(--text); }
+.z-lottery-box { background: var(--card2); border-radius: 10px; padding: 12px; margin-top: 12px; text-align: left; }
+.z-lottery-line { font-size: 12px; line-height: 2.0; }
+.z-game-big {
+  font-size: 52px; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg,#ff8800,#ffcc00,#00ff88);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin: 8px 0;
+}
+.z-game-sub { font-size: 11px; color: var(--dim); letter-spacing: 2px; margin-bottom: 4px; }
+.z-game-streak { font-size: 14px; color: #ffcc00; min-height: 22px; }
+.result-box { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 10px; }
+.result-hdr { font-size: 16px; font-weight: 900; letter-spacing: 3px; color: var(--gold); text-align: center; margin-bottom: 14px; }
+.result-row { display: flex; justify-content: space-between; padding: 6px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.result-row:last-of-type { border-bottom: none; }
+.result-row .rl { color: var(--dim); }
+.result-row .rv { font-weight: bold; }
+.result-sum { background: var(--card2); border-radius: 10px; padding: 14px; text-align: center; margin-top: 12px; }
+.result-sum-num { font-size: 40px; font-weight: 900; color: var(--gold); text-shadow: 0 0 16px rgba(255,215,0,0.4); line-height: 1; }
+.result-sum-unit { font-size: 14px; color: var(--dim); margin-top: 2px; }
+.result-bns { font-size: 12px; color: var(--orange); margin-top: 6px; min-height: 18px; }
+.result-detail { margin-top: 12px; font-size: 11px; color: var(--dim); line-height: 2; background: var(--card2); border-radius: 8px; padding: 10px; }
+
+/* ===== 履歴 ===== */
+.history-wrap { background: var(--card); border-radius: 12px; padding: 12px; margin-top: 8px; }
+.history-title { font-size: 10px; color: var(--dim); letter-spacing: 2px; margin-bottom: 8px; }
+.history-item { font-size: 11px; padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.7; }
+.history-item:last-child { border-bottom: none; }
+.h-fall  { color: #4da6ff; font-weight: bold; }
+.h-gg    { color: var(--orange); font-weight: bold; }
+.h-zzone { color: #cc0000; font-weight: bold; }
+.h-n     { color: #444; }
+.h-trig  { color: #666; font-size: 10px; }
+.h-dig   { font-weight: 900; }
 </style>
 </head>
 <body>
@@ -204,10 +309,63 @@ body {
     </div>
   </div>
 
+  <!-- Z-ZONE panel -->
+  <div id="z-zone-panel" style="display:none;">
+    <div class="z-panel">
+      <div class="z-phase-title z-zone-color">— Z ZONE —</div>
+      <div class="z-coins-row" id="z-coins-row">
+        <div class="z-coin" id="z-coin-0"></div>
+        <div class="z-coin" id="z-coin-1"></div>
+        <div class="z-coin" id="z-coin-2"></div>
+        <div class="z-coin" id="z-coin-3"></div>
+        <div class="z-coin" id="z-coin-4"></div>
+      </div>
+      <div class="z-chain-line" id="z-chain-line"></div>
+      <div class="z-info-row">獲得セット数：<span class="z-info-val" id="z-sets-disp">1</span></div>
+      <div id="z-lottery-box" class="z-lottery-box" style="display:none;">
+        <div class="z-lottery-line" id="z-lottery-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Z-GAME panel -->
+  <div id="z-game-panel" style="display:none;">
+    <div class="z-panel">
+      <div class="z-phase-title z-game-color">★ Z GAME ★</div>
+      <div class="z-game-sub">獲得セット数</div>
+      <div class="z-game-big" id="z-game-big">0</div>
+      <div class="z-game-streak" id="z-game-streak"></div>
+    </div>
+  </div>
+
   <button class="btn-lever" id="btn-lever">レバーを叩く</button>
   <button class="btn-reset"  id="btn-reset">リセット</button>
+
+  <!-- Result panel -->
+  <div id="result-panel" style="display:none;">
+    <div class="result-box">
+      <div class="result-hdr">★ RESULT ★</div>
+      <div id="result-rows"></div>
+      <div class="result-sum">
+        <div style="font-size:11px;color:var(--dim);margin-bottom:4px;">合計獲得枚数</div>
+        <div class="result-sum-num" id="result-total">0</div>
+        <div class="result-sum-unit">枚</div>
+        <div class="result-bns" id="result-bns"></div>
+      </div>
+      <div class="result-detail" id="result-detail"></div>
+    </div>
+  </div>
+
+  <!-- 履歴パネル -->
+  <div id="history-panel" style="display:none;">
+    <div class="history-wrap">
+      <div class="history-title">— 履歴 —</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
 </div>
 
+<div id="z-game-tint"></div>
 <div class="overlay" id="overlay"></div>
 <div class="end-overlay" id="end-overlay">
   <div class="end-text">STAGE END</div>
@@ -290,10 +448,78 @@ const FORBIDDEN_BARAKEME = new Set([
   '801','808','821','841','845','850','873','884',
 ]);
 
-const Z_ZONE_CONFIG = {
-  maxGames:     null,
-  successCount: 5,
-};
+// ===== Z-ZONE/Z-GAME 専用ロールテーブル =====
+// 合計100%（押し順黄7を独立役として定義）
+const Z_ROLE_TABLE = [
+  { key: 'oshi_yellow7',   label: '押し順黄7',   weight: 0.588235 },
+  { key: 'hazure',         label: 'ハズレ',      weight: 0.187384 },
+  { key: 'replay_top',     label: '上段リプレイ', weight: 0.126582 },
+  { key: 'yellow7_bottom', label: '下段黄7',     weight: 0.054348 },
+  { key: 'gaia_bell',      label: 'ガイアベル',  weight: 0.026596 },
+  { key: 'replay_mid',     label: '中段リプレイ', weight: 0.009158 },
+  { key: 'yellow7_up',     label: '右上がり黄7', weight: 0.005371 },
+  { key: 'fake_replay',    label: '赤7フェイク', weight: 0.001068 },
+  { key: 'yellow7_mid',    label: '中段黄7',    weight: 0.001038 },
+  { key: 'red7_suroe',     label: '赤7揃い',    weight: 0.000145 },
+  { key: 'god_suroe',      label: 'GOD揃い',    weight: 0.000061 },
+  { key: 'sp_role',        label: 'SP役',       weight: 0.000015 },
+];
+const Z_ROLE_TOTAL_WEIGHT = Z_ROLE_TABLE.reduce((s, r) => s + r.weight, 0);
+
+// 黄7扱い（コイン消費なし、チェーン加算）
+const Z_YELLOW7_NORMAL    = new Set(['oshi_yellow7','yellow7_bottom','gaia_bell']);
+// 確定役（即Zゲーム突入 or 特殊処理）
+const Z_YELLOW7_CONFIRMED = new Set(['yellow7_up','yellow7_mid','red7_suroe','god_suroe','sp_role']);
+
+// ========== HISTORY (セッション中持続) ==========
+let history = [];
+
+function pushHistory(outcome, extra) {
+  // extra: { sets, coins, zGame } (optional)
+  history.unshift({
+    games:   gameState.totalGames,
+    outcome,
+    trigger: gameState.ggTrigger ?? null,
+    digits:  gameState.ggDigits ? gameState.ggDigits.join('') : null,
+    sets:    extra?.sets  ?? null,
+    coins:   extra?.coins ?? null,
+    zGame:   extra?.zGame ?? false,
+  });
+  if (history.length > 7) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (history.length === 0) return;
+  document.getElementById('history-panel').style.display = '';
+  document.getElementById('history-list').innerHTML = history.map((e, i) => {
+    let outcomeHtml;
+
+    if (e.outcome === 'fall') {
+      outcomeHtml = '<span class="h-fall">転落</span>';
+
+    } else if (e.outcome === 'gg') {
+      const digColor = e.digits === '777' ? '#ff8800' : 'var(--orange)';
+      outcomeHtml  = '<span class="h-gg">GG当選</span>';
+      if (e.trigger) outcomeHtml += '&nbsp;<span class="h-trig">' + e.trigger + '</span>';
+      if (e.digits)  outcomeHtml += '&nbsp;<span class="h-dig" style="color:' + digColor + '">' + e.digits + '</span>';
+      if (e.sets  != null) outcomeHtml += '<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="h-trig">→ ' + e.sets + 'セット　' + e.coins + '枚獲得</span>';
+
+    } else {
+      // zzone
+      outcomeHtml  = '<span class="h-zzone">Zゾーン突入</span>';
+      if (e.trigger) outcomeHtml += '&nbsp;<span class="h-trig">' + e.trigger + '</span>';
+      outcomeHtml += '&nbsp;<span class="h-dig" style="color:#cc0000">000</span>';
+      if (e.zGame) outcomeHtml += '<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="h-trig">→ Zゲーム突入</span>';
+      if (e.sets  != null) outcomeHtml += '&nbsp;&nbsp;<span class="h-trig">' + e.sets + 'セット　' + e.coins + '枚獲得</span>';
+    }
+
+    return '<div class="history-item">' +
+      '<span class="h-n">' + (i + 1) + '回前：</span>' +
+      e.games + 'G&nbsp;&nbsp;' + outcomeHtml +
+      '</div>';
+  }).join('');
+}
 
 // ========== GAME STATE ==========
 let gameState = {
@@ -311,6 +537,18 @@ let gameState = {
   guaranteeAddPct:   null,
   pendingFall:       false,
   pendingFakeFall:   false,
+  // Z-ZONE/Z-GAME
+  zZoneCoins:        5,
+  zZoneChain:        0,
+  zZoneHadYellow7:   false,
+  zGameReached:      false,
+  zGameChain:        0,
+  totalSets:         0,
+  setFromEntry:      0,
+  setFromZZone:      0,
+  setFromZGame:      0,
+  setFromLottery:    0,
+  bonusCoins:        0,
 };
 
 function resetGameState() {
@@ -321,6 +559,10 @@ function resetGameState() {
     chokkouTarget: null, chokkouRoleKey: null,
     ggDigits: null, ggWins: 0, ggTrigger: null,
     guaranteeAddPct: null, pendingFall: false, pendingFakeFall: false,
+    zZoneCoins: 5, zZoneChain: 0, zZoneHadYellow7: false,
+    zGameReached: false, zGameChain: 0, totalSets: 0,
+    setFromEntry: 0, setFromZZone: 0, setFromZGame: 0, setFromLottery: 0,
+    bonusCoins: 0,
   };
 }
 
@@ -482,7 +724,9 @@ function processGame() {
   if (gameState.pendingFakeFall) { showFakeRecovery();   return; }
 
   if (gameState.phase === 'chokkou') { processChokkouGame(); return; }
-  if (gameState.phase === 'z_zone')  { processZZoneGame();   return; }
+  if (gameState.phase === 'Z-ZONE')  { processZZoneGame();   return; }
+  if (gameState.phase === 'Z-GAME')  { processZGameGame();   return; }
+  if (gameState.phase === 'result')  { return; }
 
   // ===== GAIA フェーズ =====
   gameState.totalGames++;
@@ -669,11 +913,19 @@ function processChokkouGame() {
 
   // 3ゲーム到達 かつ GG確定 → 当選告知
   if (gameState.chokkouCount >= 3 && gameState.ggWins > 0) {
-    gameState.phase = 'gg_won';
+    const isZero = gameState.ggDigits[0] === '0';
     renderReels(gameState.ggDigits, 'win');
     renderRole(role.key);
     updateCounters();
     showWinAnimation();
+    if (isZero) {
+      // 000 → Zゾーン突入
+      initZZone();
+    } else {
+      gameState.phase = 'gg_won';
+      pushHistory('gg', { sets: 1, coins: 350 });
+      showGGResultScreen();
+    }
     return;
   }
 
@@ -687,7 +939,301 @@ function processChokkouGame() {
 
 function endGaiaStage() {
   gameState.phase = 'ended';
+  pushHistory('fall');
   showFallEnd();
+}
+
+// ========== Z-ZONE / Z-GAME ==========
+
+function rollZZoneRole() {
+  return weightedPick(Z_ROLE_TABLE, Z_ROLE_TOTAL_WEIGHT);
+}
+
+function initZZone() {
+  gameState.phase          = 'Z-ZONE';
+  gameState.zZoneCoins     = 5;
+  gameState.zZoneChain     = 0;
+  gameState.zZoneHadYellow7 = false;
+  gameState.zGameChain     = 0;
+  gameState.totalSets      = 1;  // 突入で+1
+  gameState.setFromEntry   = 1;
+  gameState.setFromZZone   = 0;
+  gameState.setFromZGame   = 0;
+  gameState.setFromLottery = 0;
+  gameState.bonusCoins     = 0;
+  showZZonePanel();
+}
+
+function showZZonePanel() {
+  document.body.classList.add('z-active');
+  document.getElementById('z-zone-panel').style.display = '';
+  document.getElementById('z-game-panel').style.display = 'none';
+  document.getElementById('result-panel').style.display = 'none';
+  document.getElementById('z-lottery-box').style.display = 'none';
+  updateZCoinsDisplay();
+  updateZZoneUI();
+  // showWinAnimation() で disabled になるので遅延して再有効化
+  setTimeout(() => {
+    document.getElementById('btn-lever').disabled = false;
+  }, 600);
+}
+
+function updateZCoinsDisplay() {
+  const spent = 5 - gameState.zZoneCoins;
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('z-coin-' + i);
+    if (el) el.classList.toggle('spent', i >= (5 - spent));
+  }
+}
+
+function updateZZoneUI() {
+  const chainEl = document.getElementById('z-chain-line');
+  if (chainEl) {
+    chainEl.textContent = gameState.zZoneChain > 0
+      ? '黄7連続：' + gameState.zZoneChain + '回'
+      : '';
+  }
+  const setsEl = document.getElementById('z-sets-disp');
+  if (setsEl) setsEl.textContent = gameState.totalSets;
+}
+
+function processZZoneGame() {
+  // 新しいアテンプト開始時（参加料 1枚消費）
+  if (gameState.zZoneChain === 0) {
+    gameState.zZoneCoins--;
+    updateZCoinsDisplay();
+  }
+
+  const role = rollZZoneRole();
+  renderZZoneRole(role);
+
+  if (Z_YELLOW7_CONFIRMED.has(role.key)) {
+    // 確定役 → セット加算 + Zゲーム突入
+    gameState.totalSets++;
+    gameState.setFromZZone++;
+
+    if (role.key === 'red7_suroe') gameState.bonusCoins += 1400;
+    if (role.key === 'god_suroe')  gameState.bonusCoins += 3000;
+
+    if (role.key === 'sp_role') {
+      // SP役: 特殊抽選1回
+      const won = Math.random() < 0.80;
+      if (won) { gameState.totalSets++; gameState.setFromLottery++; }
+    }
+
+    updateZZoneUI();
+    enterZGame();
+    return;
+  }
+
+  if (Z_YELLOW7_NORMAL.has(role.key)) {
+    // 通常黄7 → チェーン加算
+    gameState.zZoneChain++;
+    gameState.zZoneHadYellow7 = true;
+    updateZZoneUI();
+
+    if (gameState.zZoneChain >= 5) {
+      // 成功A（5連続）→ セット+1 → Zゲーム
+      gameState.totalSets++;
+      gameState.setFromZZone++;
+      enterZGame();
+    }
+    return;
+  }
+
+  // 黄7以外 → チェーンリセット
+  gameState.zZoneChain = 0;
+  updateZZoneUI();
+
+  if (gameState.zZoneCoins <= 0) {
+    if (gameState.zZoneHadYellow7) {
+      // 失敗B（黄7あり、コイン切れ）→ リザルト
+      showResultScreen();
+    } else {
+      // 失敗A（黄7なし、コイン切れ）→ 特殊抽選
+      doSpecialLottery();
+    }
+  }
+}
+
+function doSpecialLottery() {
+  let gained = 0;
+  let log    = [];
+  // ループ抽選（80%継続）
+  let round  = 1;
+  while (true) {
+    const won = Math.random() < 0.80;
+    if (won) {
+      gained++;
+      gameState.totalSets++;
+      gameState.setFromLottery++;
+      log.push(round + '回目：当選 ✓');
+    } else {
+      log.push(round + '回目：終了');
+      break;
+    }
+    round++;
+  }
+
+  // ログ表示
+  document.getElementById('z-lottery-box').style.display = '';
+  document.getElementById('z-lottery-log').innerHTML =
+    '<strong style="color:var(--gold)">特殊抽選（80%ループ）</strong><br>' +
+    log.join('<br>') + '<br>セット獲得：+' + gained;
+  updateZZoneUI();
+
+  // 入力を受け付けないようにし、少し待ってリザルトへ
+  gameState.phase = 'result';
+  document.getElementById('btn-lever').disabled = true;
+  setTimeout(() => showResultScreen(), 1800);
+}
+
+function enterZGame() {
+  gameState.phase        = 'Z-GAME';
+  gameState.zGameReached = true;
+  gameState.zGameChain   = 0;
+  document.body.classList.add('z-game-active');
+  triggerOverlay('flash-zgame');
+  document.getElementById('z-zone-panel').style.display = 'none';
+  document.getElementById('z-game-panel').style.display = '';
+  document.getElementById('result-panel').style.display = 'none';
+  updateZGameUI(null);
+}
+
+function updateZGameUI(lastRoleLabel) {
+  document.getElementById('z-game-big').textContent   = gameState.totalSets;
+  document.getElementById('z-game-streak').textContent =
+    gameState.zGameChain > 0
+      ? '黄7連続 ' + gameState.zGameChain + '回'
+      : (lastRoleLabel ? lastRoleLabel + ' を引きました' : '');
+}
+
+function processZGameGame() {
+  const role = rollZZoneRole();
+  renderZZoneRole(role);
+
+  const isYellow7 = Z_YELLOW7_NORMAL.has(role.key) || Z_YELLOW7_CONFIRMED.has(role.key);
+
+  if (isYellow7) {
+    gameState.zGameChain++;
+    gameState.totalSets++;
+    gameState.setFromZGame++;
+
+    if (role.key === 'red7_suroe') gameState.bonusCoins += 1400;
+    if (role.key === 'god_suroe')  gameState.bonusCoins += 3000;
+
+    if (role.key === 'sp_role') {
+      const won = Math.random() < 0.80;
+      if (won) { gameState.totalSets++; gameState.setFromLottery++; }
+    }
+
+    updateZGameUI(null);
+  } else {
+    // 黄7以外 → Zゲーム終了 → リザルト
+    gameState.zGameChain = 0;
+    gameState.phase = 'result';
+    document.getElementById('btn-lever').disabled = true;
+    updateZGameUI(role.label);
+    setTimeout(() => showResultScreen(), 900);
+  }
+}
+
+function showGGResultScreen() {
+  gameState.phase = 'result';
+  document.getElementById('result-panel').style.display = '';
+  document.getElementById('btn-lever').disabled = true;
+
+  const digits  = gameState.ggDigits ? gameState.ggDigits.join('') : '—';
+  const trigger = gameState.ggTrigger ?? '—';
+  const sets    = 1;
+  const coins   = sets * 350;
+
+  document.getElementById('result-rows').innerHTML =
+    '<div class="result-row"><span class="rl">経過G数</span><span class="rv">' + gameState.totalGames + ' G</span></div>' +
+    '<div class="result-row"><span class="rl">当選契機</span><span class="rv" style="font-size:12px">' + trigger + '</span></div>' +
+    '<div class="result-row"><span class="rl">出目</span><span class="rv" style="color:var(--red);font-size:20px;letter-spacing:4px">' + digits + '</span></div>' +
+    '<div class="result-row"><span class="rl">獲得セット数</span><span class="rv">' + sets + ' セット</span></div>';
+
+  document.getElementById('result-total').textContent = coins;
+  document.getElementById('result-bns').textContent   = '';
+  document.getElementById('result-detail').innerHTML  = 'GG当選：' + sets + 'セット × 350枚 = ' + coins + '枚';
+
+  // result-sumのラベルを通常に戻す
+  const sumLabel = document.querySelector('#result-panel .result-sum div:first-child');
+  if (sumLabel) sumLabel.textContent = '合計獲得枚数';
+  const sumUnit = document.querySelector('#result-panel .result-sum-unit');
+  if (sumUnit) sumUnit.textContent = '枚';
+}
+
+function showResultScreen() {
+  const totalCoins = gameState.totalSets * 350 + gameState.bonusCoins;
+  // Z-ZONE 終了時に履歴記録（セット数・枚数が確定してから）
+  pushHistory('zzone', {
+    sets:  gameState.totalSets,
+    coins: totalCoins,
+    zGame: gameState.zGameReached,
+  });
+
+  gameState.phase = 'result';
+  clearZMode();
+  document.getElementById('z-zone-panel').style.display = 'none';
+  document.getElementById('z-game-panel').style.display = 'none';
+  document.getElementById('result-panel').style.display = '';
+  document.getElementById('btn-lever').disabled = true;
+  // ラベルを Z-ZONE 用に初期化（GG result で書き換えられた場合も戻す）
+  const sumLabel = document.querySelector('#result-panel .result-sum div:first-child');
+  if (sumLabel) sumLabel.textContent = '合計獲得枚数';
+  const sumUnit = document.querySelector('#result-panel .result-sum-unit');
+  if (sumUnit) sumUnit.textContent = '枚';
+
+  const sets       = gameState.totalSets;
+  const setsCoins  = sets * 350;
+  const bonus      = gameState.bonusCoins;
+  const total      = setsCoins + bonus;
+
+  // 内訳行
+  const rows = [
+    { l: '突入セット',            v: gameState.setFromEntry   + ' セット' },
+    { l: 'Zゾーン成功セット',      v: gameState.setFromZZone   + ' セット' },
+    { l: 'Zゲーム継続セット',      v: gameState.setFromZGame   + ' セット' },
+    { l: '特殊抽選セット',         v: gameState.setFromLottery + ' セット' },
+    { l: '合計セット数',           v: sets + ' セット' },
+    { l: '1セット = 350枚',        v: setsCoins + ' 枚' },
+  ];
+
+  document.getElementById('result-rows').innerHTML =
+    rows.map(r =>
+      '<div class="result-row"><span class="rl">' + r.l + '</span><span class="rv">' + r.v + '</span></div>'
+    ).join('');
+
+  document.getElementById('result-total').textContent = total;
+
+  document.getElementById('result-bns').textContent =
+    bonus > 0 ? 'ボーナス枚数: ' + bonus + ' 枚（特殊役）' : '';
+
+  document.getElementById('result-detail').innerHTML =
+    'セット数詳細：突入+' + gameState.setFromEntry +
+    ' / Zゾーン+' + gameState.setFromZZone +
+    ' / Zゲーム+' + gameState.setFromZGame +
+    ' / 特殊抽選+' + gameState.setFromLottery +
+    '<br>経過G数：' + gameState.totalGames + 'G';
+}
+
+function renderZZoneRole(role) {
+  // リールを消して剣を大きく黄色で表示
+  const reelArea = document.getElementById('reel-area');
+  reelArea.classList.add('z-mode');
+  document.getElementById('sword-icon').classList.add('visible');
+
+  const labelEl = document.getElementById('role-label');
+  const rateEl  = document.getElementById('role-rate');
+  if (labelEl) labelEl.textContent = role.label;
+  if (rateEl)  rateEl.textContent  = '1/' + (1 / role.weight).toFixed(1);
+}
+
+function clearZMode() {
+  document.getElementById('reel-area').classList.remove('z-mode');
+  document.body.classList.remove('z-active', 'z-game-active');
 }
 
 // ========== UI RENDERING ==========
@@ -848,16 +1394,6 @@ function updateCounters() {
   }
 }
 
-// ========== Z ZONE SKELETON ==========
-
-function enterZZone() {
-  gameState.phase = 'z_zone';
-}
-
-function processZZoneGame() {
-  // TODO: Zゾーン中のゲーム処理
-}
-
 // ========== ANIMATIONS + HANDLERS + INIT ==========
 
 function animateReels(animClass) {
@@ -958,15 +1494,24 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     el.className = 'reel';
     el.querySelector('.reel-digit').textContent = '—';
   }
-  document.getElementById('reel-area').classList.remove('s-pinch');
+  document.getElementById('reel-area').classList.remove('s-pinch', 'z-mode');
   document.getElementById('god-labels').classList.remove('visible');
   document.getElementById('sword-icon').classList.remove('visible');
+  document.body.classList.remove('z-active', 'z-game-active');
   const msgEl = document.getElementById('reel-message');
   msgEl.textContent = '';
   msgEl.removeAttribute('style');
   document.getElementById('role-label').textContent = '— 待機中 —';
   document.getElementById('role-rate').textContent  = '';
   document.getElementById('end-overlay').classList.remove('visible');
+  document.getElementById('z-zone-panel').style.display = 'none';
+  document.getElementById('z-game-panel').style.display = 'none';
+  document.getElementById('result-panel').style.display = 'none';
+  // コイン表示リセット
+  for (let i = 0; i < 5; i++) {
+    const c = document.getElementById('z-coin-' + i);
+    if (c) c.classList.remove('spent');
+  }
   document.getElementById('btn-lever').disabled = false;
   updateCounters();
 });
