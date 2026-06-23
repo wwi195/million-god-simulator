@@ -327,6 +327,8 @@ function generateBarakeme(mode) {
     }
     if (d[0] === d[1] && d[1] === d[2]) continue;
     if (FORBIDDEN_BARAKEME.has(d.join(''))) continue;
+    const n = d.map(x => (x === 'V') ? NaN : Number(x));
+    if (n[1] - n[0] === 1 && n[2] - n[1] === 1) continue;
     result = d;
   }
   return result || ['8','2','6'];
@@ -337,17 +339,19 @@ function generateTenpa(targetDigit) {
   const diffPool = BASE.filter(d => d !== targetDigit);
   let result = null;
   for (let tries = 0; tries < 300 && !result; tries++) {
-    const diffPos = Math.floor(Math.random() * 3);
-    const diff    = diffPool[Math.floor(Math.random() * diffPool.length)];
-    const d = [targetDigit, targetDigit, targetDigit];
-    d[diffPos] = diff;
+    const diff = diffPool[Math.floor(Math.random() * diffPool.length)];
+    const d = [targetDigit, targetDigit, diff];
     if (FORBIDDEN_BARAKEME.has(d.join(''))) continue;
     result = d;
   }
   if (!result) {
-    const d = [targetDigit, targetDigit, targetDigit];
-    d[0] = targetDigit === '1' ? '2' : '1';
-    result = d;
+    for (const diff of diffPool) {
+      if (!FORBIDDEN_BARAKEME.has(targetDigit + targetDigit + diff)) {
+        result = [targetDigit, targetDigit, diff];
+        break;
+      }
+    }
+    result = result || [targetDigit, targetDigit, diffPool[0]];
   }
   return result;
 }
