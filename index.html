@@ -321,7 +321,8 @@ function updateChains(roleKey) {
     gameState.yellow7Chain++;
     gameState.replayChain = 0;
   } else if (roleKey === 'gaia_bell') {
-    // ガイアベル: 連続カウントを途切れさせない
+    if (gameState.replayChain  > 0) gameState.replayChain++;
+    if (gameState.yellow7Chain > 0) gameState.yellow7Chain++;
   } else {
     gameState.replayChain  = 0;
     gameState.yellow7Chain = 0;
@@ -471,6 +472,13 @@ function processGame() {
       updateCounters();
       showWinAnimation();
     } else {
+      // GG当選でも保証G加算抽選は実施（減算なし）
+      gameState.guaranteeAddPct = null;
+      if (gameState.guaranteeGames <= 3 && rollGuaranteeAdd(role.key)) {
+        const addRate = GUARANTEE_ADD_TABLE[role.key] ?? 0;
+        gameState.guaranteeGames += 3;
+        gameState.guaranteeAddPct = (addRate * 100).toFixed(1) + '%';
+      }
       const r = Math.random();
       const fakeLen = r < 0.25 ? 1 : r < 0.50 ? 2 : r < 0.75 ? 3 : null;
       gameState.phase             = 'chokkou';
@@ -490,6 +498,13 @@ function processGame() {
 
   // ===== レア役ガセ前兆（GG非当選でも必ず前兆突入）=====
   if (isRareForChokkou) {
+    // ガセ前兆突入時も保証G加算抽選を実施（減算なし）
+    gameState.guaranteeAddPct = null;
+    if (gameState.guaranteeGames <= 3 && rollGuaranteeAdd(role.key)) {
+      const addRate = GUARANTEE_ADD_TABLE[role.key] ?? 0;
+      gameState.guaranteeGames += 3;
+      gameState.guaranteeAddPct = (addRate * 100).toFixed(1) + '%';
+    }
     const fakeLen    = Math.ceil(Math.random() * 3);
     const fakeTarget = ['1','3','5'][Math.floor(Math.random() * 3)];
     gameState.phase             = 'chokkou';
@@ -544,13 +559,31 @@ function processChokkouGame() {
   gameState.chokkouCount++;
   gameState.totalGames++;
 
-  // 前兆中も役抽選・チェーン更新を行う
   const role = rollRole();
   updateChains(role.key);
 
-  // チェーン抽選でGG追加獲得（単発抽選は行わない）
-  if (rollGGChain()) {
-    gameState.ggWins++;
+  // 保証G加算抽選（前兆中も実施）
+  gameState.guaranteeAddPct = null;
+  if (gameState.guaranteeGames <= 3 && rollGuaranteeAdd(role.key)) {
+    const addRate = GUARANTEE_ADD_TABLE[role.key] ?? 0;
+    gameState.guaranteeGames += 3;
+    gameState.guaranteeAddPct = (addRate * 100).toFixed(1) + '%';
+  }
+
+  // 単発・チェーン両方でGG抽選（前兆中も実施）
+  const singleWon = rollGGSingle(role.key);
+  const chainWon  = rollGGChain();
+  if (singleWon || chainWon) {
+    if (gameState.chokkouFakeLength !== null) {
+      // ガセ前兆中にGG当選 → 本前兆に変換
+      const ggResult = decideGGNumber(role.key);
+      gameState.ggDigits          = ggResult.digits;
+      gameState.ggWins            = 1;
+      gameState.chokkouFakeLength = null;
+      gameState.chokkouTarget     = ggResult.digits[0];
+    } else {
+      gameState.ggWins++;
+    }
   }
 
   const isFake = gameState.chokkouFakeLength !== null;
