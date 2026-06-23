@@ -556,6 +556,30 @@ function processGame() {
     return;
   }
 
+  // ===== 5%ガセ前兆（一般役）=====
+  const isGaseCandidate = ['hazure_oshi','hazure_normal','replay_top','yellow7_bottom','gaia_bell','fake_replay'].includes(role.key);
+  if (isGaseCandidate && Math.random() < 0.05) {
+    gameState.guaranteeAddPct = null;
+    if (gameState.guaranteeGames <= 3 && rollGuaranteeAdd(role.key)) {
+      const addRate = GUARANTEE_ADD_TABLE[role.key] ?? 0;
+      gameState.guaranteeGames += 3;
+      gameState.guaranteeAddPct = (addRate * 100).toFixed(1) + '%';
+    }
+    const fakeTarget = ['1','3','5'][Math.floor(Math.random() * 3)];
+    gameState.ggWins         = 0;
+    gameState.ggDigits       = null;
+    gameState.phase          = 'chokkou';
+    gameState.chokkouCount   = 0;
+    gameState.chokkouTarget  = fakeTarget;
+    gameState.chokkouRoleKey = role.key;
+    const disp = getChokkouDisplay(fakeTarget);
+    renderReels(disp.tenpa, 'tenpa', disp.target);
+    renderRole(role.key);
+    updateCounters();
+    showChokkouAnim();
+    return;
+  }
+
   // ===== GG非当選 =====
   gameState.guaranteeAddPct = null;
   gameState.guaranteeGames  = Math.max(0, gameState.guaranteeGames - 1);
