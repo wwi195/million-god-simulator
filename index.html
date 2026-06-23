@@ -565,10 +565,82 @@ function updateCounters() {
 }
 
 // ========== Z ZONE SKELETON ==========
-// (Task 9 で追加)
+
+function enterZZone() {
+  gameState.phase = 'z_zone';
+}
+
+function processZZoneGame() {
+  // TODO: Zゾーン中のゲーム処理
+}
 
 // ========== ANIMATIONS + HANDLERS + INIT ==========
-// (Task 9 で追加)
+
+function animateReels(animClass) {
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('reel-' + i);
+    el.classList.remove('anim-drop', 'anim-pop');
+    void el.offsetWidth;
+    el.classList.add(animClass);
+  }
+}
+
+function triggerOverlay(cls) {
+  const ov = document.getElementById('overlay');
+  ov.className = 'overlay';
+  void ov.offsetWidth;
+  ov.className = 'overlay ' + cls;
+}
+
+function showWinAnimation() {
+  animateReels('anim-drop');
+  triggerOverlay('flash-red');
+  document.getElementById('btn-lever').disabled = true;
+}
+
+function showChokkouAnim() {
+  animateReels('anim-pop');
+}
+
+function showFallPinch() {
+  document.getElementById('reel-area').classList.add('s-pinch');
+  const msgEl = document.getElementById('reel-message');
+  msgEl.textContent  = '⚠ 転落のピンチ！';
+  msgEl.style.color  = 'var(--orange)';
+  triggerOverlay('flash-orange');
+}
+
+function showFallEnd() {
+  document.getElementById('end-sub').textContent =
+    gameState.totalGames + 'G でガイアステージ終了';
+  document.getElementById('end-overlay').classList.add('visible');
+  document.getElementById('btn-lever').disabled = true;
+}
+
+document.getElementById('btn-lever').addEventListener('click', () => {
+  processGame();
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  resetGameState();
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('reel-' + i);
+    el.className = 'reel';
+    el.querySelector('.reel-digit').textContent = '—';
+  }
+  document.getElementById('reel-area').classList.remove('s-pinch');
+  document.getElementById('god-labels').classList.remove('visible');
+  document.getElementById('sword-icon').classList.remove('visible');
+  const msgEl = document.getElementById('reel-message');
+  msgEl.textContent = '';
+  msgEl.removeAttribute('style');
+  document.getElementById('role-display').textContent = '— 待機中 —';
+  document.getElementById('end-overlay').classList.remove('visible');
+  document.getElementById('btn-lever').disabled = false;
+  updateCounters();
+});
+
+updateCounters();
 </script>
 </body>
 </html>
