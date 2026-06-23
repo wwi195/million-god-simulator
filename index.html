@@ -491,7 +491,78 @@ function endGaiaStage() {
 }
 
 // ========== UI RENDERING ==========
-// (Task 8 で追加)
+
+function digitClass(digit, mode, isTenpaDigit) {
+  if (mode === 'win') {
+    if (digit === '7') return 's-seven';
+    if (digit === '0') return 's-zero';
+    return 's-odd';
+  }
+  if (mode === 'tenpa') return isTenpaDigit ? 's-tenpa' : 's-even';
+  if (digit === 'V') return 's-v';
+  if (digit === '7') return 's-hot';
+  return 's-even';
+}
+
+function renderReels(digits, mode, tenpaDigit) {
+  const reelArea  = document.getElementById('reel-area');
+  const godLabels = document.getElementById('god-labels');
+  const swordIcon = document.getElementById('sword-icon');
+  const msgEl     = document.getElementById('reel-message');
+
+  const isZeroWin  = mode === 'win' && digits[0] === '0';
+  const isSevenWin = mode === 'win' && digits[0] === '7';
+
+  swordIcon.classList.toggle('visible', isZeroWin);
+  godLabels.classList.toggle('visible', isSevenWin);
+  reelArea.classList.remove('s-pinch');
+
+  for (let i = 0; i < 3; i++) {
+    const reelEl = document.getElementById('reel-' + i);
+    const span   = reelEl.querySelector('.reel-digit');
+    reelEl.className = 'reel';
+    const isTenpa = (mode === 'tenpa') && (digits[i] === tenpaDigit);
+    reelEl.classList.add(digitClass(digits[i], mode, isTenpa));
+    span.textContent = digits[i];
+  }
+
+  msgEl.removeAttribute('style');
+  if (mode === 'win') {
+    if (isSevenWin) {
+      msgEl.textContent = '★ GOD GAME ★';
+      msgEl.style.background = 'linear-gradient(90deg,#ff8800,#ffff00,#00ff88)';
+      msgEl.style.webkitBackgroundClip = 'text';
+      msgEl.style.webkitTextFillColor  = 'transparent';
+    } else if (isZeroWin) {
+      msgEl.textContent  = '— Zゾーン突入 —';
+      msgEl.style.color  = '#cc0000';
+    } else {
+      msgEl.textContent  = '★ GG当選！ ★';
+      msgEl.style.color  = '#ff8800';
+    }
+  } else if (mode === 'tenpa') {
+    msgEl.textContent = '前兆中…';
+    msgEl.style.color = '#ff8800';
+  } else {
+    msgEl.textContent = '';
+  }
+}
+
+function renderRole(roleKey) {
+  const el = document.getElementById('role-display');
+  if (!roleKey) { el.textContent = '前兆中…'; return; }
+  const row = ROLE_TABLE.find(r => r.key === roleKey);
+  el.textContent = row ? row.label : '—';
+}
+
+function updateCounters() {
+  document.getElementById('cnt-total').textContent    = gameState.totalGames;
+  document.getElementById('cnt-replay').textContent   = gameState.replayChain;
+  document.getElementById('cnt-yellow7').textContent  = gameState.yellow7Chain;
+  const gEl = document.getElementById('cnt-guarantee');
+  gEl.textContent  = gameState.guaranteeGames;
+  gEl.className    = 'counter-value guarantee' + (gameState.guaranteeGames <= 3 ? ' low' : '');
+}
 
 // ========== Z ZONE SKELETON ==========
 // (Task 9 で追加)
