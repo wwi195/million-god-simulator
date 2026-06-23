@@ -74,8 +74,10 @@ body {
 }
 .role-display {
   background: var(--card); border-radius: 8px; padding: 8px 12px;
-  text-align: center; font-size: 13px; color: #aaa; margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: #aaa; margin-bottom: 10px;
 }
+#role-rate { text-align: right; color: var(--dim); }
 .counters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .counter { background: var(--card); border-radius: 10px; padding: 10px 8px; text-align: center; }
 .counter-label { font-size: 10px; color: var(--dim); margin-bottom: 4px; }
@@ -171,7 +173,10 @@ body {
     <div class="reel-message" id="reel-message"></div>
   </div>
 
-  <div class="role-display" id="role-display">— 待機中 —</div>
+  <div class="role-display" id="role-display">
+    <span id="role-label">— 待機中 —</span>
+    <span id="role-rate"></span>
+  </div>
 
   <div class="counters">
     <div class="counter">
@@ -585,24 +590,31 @@ function renderReels(digits, mode, tenpaDigit) {
 }
 
 function renderRole(roleKey) {
-  const el = document.getElementById('role-display');
-  if (!roleKey) { el.textContent = '前兆中…'; return; }
+  const labelEl = document.getElementById('role-label');
+  const rateEl  = document.getElementById('role-rate');
+
+  if (!roleKey) {
+    labelEl.textContent = '前兆中…';
+    rateEl.textContent  = '';
+    return;
+  }
+
   const row = ROLE_TABLE.find(r => r.key === roleKey);
-  const label = row ? row.label : '—';
+  labelEl.textContent = row ? row.label : '—';
+
   const pct = v => (v * 100).toFixed(1) + '%';
   const single = GG_SINGLE_TABLE[roleKey] ?? 0;
-
-  let text = label + '  ' + pct(single);
+  let rateText = pct(single);
 
   if (gameState.replayChain > 0) {
     const idx = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
-    text += '  （履歴抽選 ' + pct(REPLAY_CHAIN_RATE[idx]) + '）';
+    rateText += '  （履歴抽選 ' + pct(REPLAY_CHAIN_RATE[idx]) + '）';
   } else if (gameState.yellow7Chain > 0) {
     const idx = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
-    text += '  （履歴抽選 ' + pct(YELLOW7_CHAIN_RATE[idx]) + '）';
+    rateText += '  （履歴抽選 ' + pct(YELLOW7_CHAIN_RATE[idx]) + '）';
   }
 
-  el.textContent = text;
+  rateEl.textContent = rateText;
 }
 
 function updateCounters() {
@@ -688,7 +700,8 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   const msgEl = document.getElementById('reel-message');
   msgEl.textContent = '';
   msgEl.removeAttribute('style');
-  document.getElementById('role-display').textContent = '— 待機中 —';
+  document.getElementById('role-label').textContent = '— 待機中 —';
+  document.getElementById('role-rate').textContent  = '';
   document.getElementById('end-overlay').classList.remove('visible');
   document.getElementById('btn-lever').disabled = false;
   updateCounters();
