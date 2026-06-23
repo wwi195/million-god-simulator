@@ -268,15 +268,16 @@ const Z_ZONE_CONFIG = {
 
 // ========== GAME STATE ==========
 let gameState = {
-  totalGames:     0,
-  guaranteeGames: 9,
-  replayChain:    0,
-  yellow7Chain:   0,
-  phase:          'gaia',
-  chokkouCount:   0,
-  chokkouTarget:  null,
-  ggDigits:       null,
-  pendingFall:    false,
+  totalGames:        0,
+  guaranteeGames:    9,
+  replayChain:       0,
+  yellow7Chain:      0,
+  phase:             'gaia',
+  chokkouCount:      0,
+  chokkouTarget:     null,
+  chokkouFakeLength: null,
+  ggDigits:          null,
+  pendingFall:       false,
 };
 
 function resetGameState() {
@@ -284,8 +285,8 @@ function resetGameState() {
     totalGames: 0, guaranteeGames: 9,
     replayChain: 0, yellow7Chain: 0,
     phase: 'gaia', chokkouCount: 0,
-    chokkouTarget: null, ggDigits: null,
-    pendingFall: false,
+    chokkouTarget: null, chokkouFakeLength: null,
+    ggDigits: null, pendingFall: false,
   };
 }
 
@@ -449,9 +450,13 @@ function processGame() {
       updateCounters();
       showWinAnimation();
     } else {
-      gameState.phase        = 'chokkou';
-      gameState.chokkouCount = 0;
-      gameState.chokkouTarget = ggResult.digits[0];
+      const r = Math.random();
+      const fakeLen = r < 0.25 ? 1 : r < 0.50 ? 2 : r < 0.75 ? 3 : null;
+      gameState.phase             = 'chokkou';
+      gameState.chokkouCount      = 0;
+      gameState.chokkouFakeLength = fakeLen;
+      gameState.chokkouTarget     = ggResult.digits[0];
+      if (fakeLen !== null) gameState.ggDigits = null;
       const disp = getChokkouDisplay(gameState.chokkouTarget);
       renderReels(disp.tenpa, 'tenpa', disp.target);
       renderRole(role.key);
@@ -483,18 +488,30 @@ function processChokkouGame() {
   gameState.chokkouCount++;
   gameState.totalGames++;
 
-  if (gameState.chokkouCount < 3) {
+  const isFake = gameState.chokkouFakeLength !== null;
+  const ended  = isFake
+    ? gameState.chokkouCount >= gameState.chokkouFakeLength
+    : gameState.chokkouCount >= 3;
+
+  if (!ended) {
     const disp = getChokkouDisplay(gameState.chokkouTarget);
     renderReels(disp.tenpa, 'tenpa', disp.target);
     renderRole(null);
     updateCounters();
     showChokkouAnim();
-  } else {
+  } else if (!isFake) {
     gameState.phase = 'gg_won';
     renderReels(gameState.ggDigits, 'win');
     renderRole(null);
     updateCounters();
     showWinAnimation();
+  } else {
+    gameState.phase             = 'gaia';
+    gameState.chokkouFakeLength = null;
+    const bDigits = generateBarakeme('normal');
+    renderReels(bDigits, 'normal');
+    document.getElementById('role-display').textContent = '— ガセ前兆 —';
+    updateCounters();
   }
 }
 
