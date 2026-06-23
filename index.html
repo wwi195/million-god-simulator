@@ -129,6 +129,14 @@ body {
   opacity: 0; transition: opacity 0.4s 0.5s;
 }
 .end-overlay.visible .end-sub { opacity: 1; }
+.btn-back {
+  margin-top: 28px; padding: 12px 36px;
+  background: transparent; border: 1px solid #555;
+  border-radius: 8px; color: #888; font-size: 14px; cursor: pointer;
+  opacity: 0; transition: opacity 0.4s 0.7s;
+}
+.btn-back:hover { border-color: #aaa; color: #ccc; }
+.end-overlay.visible .btn-back { opacity: 1; }
 </style>
 </head>
 <body>
@@ -192,6 +200,7 @@ body {
 <div class="end-overlay" id="end-overlay">
   <div class="end-text">STAGE END</div>
   <div class="end-sub" id="end-sub">ガイアステージ終了</div>
+  <button class="btn-back" id="btn-back">戻る</button>
 </div>
 
 <script>
@@ -623,6 +632,10 @@ function showFallEnd() {
 
 document.getElementById('btn-lever').addEventListener('click', () => {
   processGame();
+});
+
+document.getElementById('btn-back').addEventListener('click', () => {
+  document.getElementById('btn-reset').click();
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
