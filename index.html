@@ -711,8 +711,11 @@ function renderReels(digits, mode, tenpaDigit) {
       msgEl.style.webkitBackgroundClip = 'text';
       msgEl.style.webkitTextFillColor  = 'transparent';
     } else if (isZeroWin) {
-      msgEl.textContent  = '— Zゾーン突入 —';
-      msgEl.style.color  = '#cc0000';
+      const trig = gameState.ggTrigger
+        ? '<br><span style="font-size:10px;font-weight:normal;opacity:0.75;">' + gameState.ggTrigger + '</span>'
+        : '';
+      msgEl.innerHTML  = '— Zゾーン突入 —' + trig;
+      msgEl.style.color = '#cc0000';
     } else {
       const trig = gameState.ggTrigger
         ? '<br><span style="font-size:10px;font-weight:normal;opacity:0.75;">' + gameState.ggTrigger + '</span>'
