@@ -588,7 +588,21 @@ function renderRole(roleKey) {
   const el = document.getElementById('role-display');
   if (!roleKey) { el.textContent = '前兆中…'; return; }
   const row = ROLE_TABLE.find(r => r.key === roleKey);
-  el.textContent = row ? row.label : '—';
+  const label = row ? row.label : '—';
+  const pct = v => (v * 100).toFixed(1) + '%';
+  const single = GG_SINGLE_TABLE[roleKey] ?? 0;
+
+  let text = label + '  ' + pct(single);
+
+  if (gameState.replayChain > 0) {
+    const idx = Math.min(gameState.replayChain, REPLAY_CHAIN_RATE.length - 1);
+    text += '  （履歴抽選 ' + pct(REPLAY_CHAIN_RATE[idx]) + '）';
+  } else if (gameState.yellow7Chain > 0) {
+    const idx = Math.min(gameState.yellow7Chain, YELLOW7_CHAIN_RATE.length - 1);
+    text += '  （履歴抽選 ' + pct(YELLOW7_CHAIN_RATE[idx]) + '）';
+  }
+
+  el.textContent = text;
 }
 
 function updateCounters() {
