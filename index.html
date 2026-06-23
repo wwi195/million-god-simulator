@@ -248,7 +248,22 @@ body {
 .h-n     { color: #444; }
 .h-trig  { color: #666; font-size: 10px; }
 .h-dig   { font-weight: 900; }
+
+/* ===== ランキング ===== */
+.ranking-wrap { background: var(--card); border-radius: 12px; padding: 12px; margin-top: 8px; }
+.ranking-title { font-size: 10px; color: var(--dim); letter-spacing: 2px; margin-bottom: 8px; }
+.ranking-item { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.ranking-item:last-child { border-bottom: none; }
+.r-rank   { width: 24px; font-weight: 900; font-size: 13px; flex-shrink: 0; }
+.r-rank.gold   { color: #ffd700; }
+.r-rank.silver { color: #c0c0c0; }
+.r-rank.bronze { color: #cd7f32; }
+.r-rank.other  { color: var(--dim); }
+.r-coins  { flex: 1; font-weight: bold; color: var(--gold); text-align: right; }
+.r-date   { color: #555; font-size: 10px; text-align: right; flex-shrink: 0; }
+.ranking-empty { font-size: 11px; color: var(--dim); text-align: center; padding: 8px 0; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="app">
@@ -363,6 +378,14 @@ body {
       <div id="history-list"></div>
     </div>
   </div>
+
+  <!-- ランキングパネル -->
+  <div id="ranking-panel">
+    <div class="ranking-wrap">
+      <div class="ranking-title">— ランキング TOP5 —</div>
+      <div id="ranking-list"><div class="ranking-empty">読み込み中...</div></div>
+    </div>
+  </div>
 </div>
 
 <div id="z-game-tint"></div>
@@ -470,6 +493,60 @@ const Z_ROLE_TOTAL_WEIGHT = Z_ROLE_TABLE.reduce((s, r) => s + r.weight, 0);
 const Z_YELLOW7_NORMAL    = new Set(['oshi_yellow7','yellow7_bottom','gaia_bell']);
 // 確定役（即Zゲーム突入 or 特殊処理）
 const Z_YELLOW7_CONFIRMED = new Set(['yellow7_up','yellow7_mid','red7_suroe','god_suroe','sp_role']);
+
+// ========== SUPABASE ==========
+const SUPABASE_URL = 'https://hegqzfpkovqipvdwzyri.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlZ3F6ZnBrb3ZxaXB2ZHd6eXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzQ5MDUsImV4cCI6MjA5NzM1MDkwNX0.h7AyY9Z1Es1X1pxgE33urRHMIGOfGH17J-Ir7DbM3j0';
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function saveRanking(coins) {
+  try {
+    await sbClient.from('rankings').insert({ coins });
+  } catch (e) {
+    console.error('ranking save error:', e);
+  }
+}
+
+async function fetchAndRenderRanking() {
+  try {
+    const { data, error } = await sbClient
+      .from('rankings')
+      .select('coins, created_at')
+      .order('coins', { ascending: false })
+      .limit(5);
+    if (error) throw error;
+    renderRanking(data ?? []);
+  } catch (e) {
+    console.error('ranking fetch error:', e);
+    document.getElementById('ranking-list').innerHTML =
+      '<div class="ranking-empty">取得失敗</div>';
+  }
+}
+
+function renderRanking(rows) {
+  const rankClasses = ['gold','silver','bronze','other','other'];
+  const rankLabels  = ['1','2','3','4','5'];
+
+  if (rows.length === 0) {
+    document.getElementById('ranking-list').innerHTML =
+      '<div class="ranking-empty">まだ記録がありません</div>';
+    return;
+  }
+
+  document.getElementById('ranking-list').innerHTML = rows.map((r, i) => {
+    const dt  = new Date(r.created_at);
+    const mon = dt.getMonth() + 1;
+    const day = dt.getDate();
+    const hh  = String(dt.getHours()).padStart(2,'0');
+    const mm  = String(dt.getMinutes()).padStart(2,'0');
+    const dateStr = mon + '/' + day + ' ' + hh + ':' + mm;
+    return '<div class="ranking-item">' +
+      '<span class="r-rank ' + rankClasses[i] + '">' + rankLabels[i] + '位</span>' +
+      '<span class="r-coins">' + r.coins.toLocaleString() + ' 枚</span>' +
+      '<span class="r-date">' + dateStr + '</span>' +
+      '</div>';
+  }).join('');
+}
 
 // ========== HISTORY (セッション中持続) ==========
 let history = [];
@@ -1163,6 +1240,8 @@ function showGGResultScreen() {
   if (sumLabel) sumLabel.textContent = '合計獲得枚数';
   const sumUnit = document.querySelector('#result-panel .result-sum-unit');
   if (sumUnit) sumUnit.textContent = '枚';
+
+  saveRanking(coins).then(() => fetchAndRenderRanking());
 }
 
 function showResultScreen() {
@@ -1217,6 +1296,8 @@ function showResultScreen() {
     ' / Zゲーム+' + gameState.setFromZGame +
     ' / 特殊抽選+' + gameState.setFromLottery +
     '<br>経過G数：' + gameState.totalGames + 'G';
+
+  saveRanking(total).then(() => fetchAndRenderRanking());
 }
 
 function renderZZoneRole(role) {
@@ -1517,6 +1598,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 });
 
 updateCounters();
+fetchAndRenderRanking();
 </script>
 </body>
 </html>
