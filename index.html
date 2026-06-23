@@ -338,6 +338,9 @@ function generateBarakeme(mode) {
     }
     if (d[0] === d[1] && d[1] === d[2]) continue;
     if (FORBIDDEN_BARAKEME.has(d.join(''))) continue;
+    const OZ = new Set(['0','1','3','5']);
+    if (d[0] === d[1] && OZ.has(d[0])) continue;
+    if (d[0] === d[2] && OZ.has(d[0]) && OZ.has(d[1])) continue;
     const n = d.map(x => (x === 'V') ? NaN : Number(x));
     if (n[1] - n[0] === 1 && n[2] - n[1] === 1) continue;
     result = d;
