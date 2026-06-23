@@ -470,7 +470,7 @@ function processChokkouGame() {
   gameState.chokkouCount++;
   gameState.totalGames++;
 
-  if (gameState.chokkouCount < 4) {
+  if (gameState.chokkouCount < 3) {
     const disp = getChokkouDisplay(gameState.chokkouTarget);
     renderReels(disp.tenpa, 'tenpa', disp.target);
     renderRole(null);
