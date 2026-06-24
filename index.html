@@ -850,11 +850,16 @@ function processGame() {
     gameState.ggTrigger = buildGGTrigger(role.key, singleWon, chainResult);
 
     if (ggResult.instant) {
+      const instBonus = role.key === 'red7_suroe' ? 1400
+                      : role.key === 'god_suroe'  ? 3000 : 0;
+      gameState.bonusCoins = instBonus;
       gameState.phase = 'gg_won';
       renderReels(ggResult.digits, 'win');
       renderRole(role.key);
       updateCounters();
       showWinAnimation();
+      pushHistory('gg', { sets: 1, coins: 350 + instBonus });
+      showGGResultScreen();
     } else {
       // GG当選でも保証G加算抽選は実施（減算なし）
       gameState.guaranteeAddPct = null;
@@ -1022,6 +1027,7 @@ function processChokkouGame() {
       // 000 → Zゾーン突入
       initZZone();
     } else {
+      gameState.bonusCoins = 0;
       gameState.phase = 'gg_won';
       pushHistory('gg', { sets: 1, coins: 350 });
       showGGResultScreen();
@@ -1259,18 +1265,26 @@ function showGGResultScreen() {
 
   const digits  = gameState.ggDigits ? gameState.ggDigits.join('') : '—';
   const trigger = gameState.ggTrigger ?? '—';
+  const bonus   = gameState.bonusCoins ?? 0;
   const sets    = 1;
-  const coins   = sets * 350;
+  const base    = sets * 350;
+  const coins   = base + bonus;
 
-  document.getElementById('result-rows').innerHTML =
+  let rows =
     '<div class="result-row"><span class="rl">経過G数</span><span class="rv">' + gameState.totalGames + ' G</span></div>' +
     '<div class="result-row"><span class="rl">当選契機</span><span class="rv" style="font-size:12px">' + trigger + '</span></div>' +
     '<div class="result-row"><span class="rl">出目</span><span class="rv" style="color:var(--red);font-size:20px;letter-spacing:4px">' + digits + '</span></div>' +
-    '<div class="result-row"><span class="rl">獲得セット数</span><span class="rv">' + sets + ' セット</span></div>';
+    '<div class="result-row"><span class="rl">獲得セット数</span><span class="rv">' + sets + ' セット（' + base + '枚）</span></div>';
+  if (bonus > 0) {
+    const bonusLabel = bonus === 3000 ? 'GOD揃いボーナス' : '赤7揃いボーナス';
+    rows += '<div class="result-row"><span class="rl">' + bonusLabel + '</span><span class="rv" style="color:var(--orange)">+' + bonus + ' 枚</span></div>';
+  }
+  document.getElementById('result-rows').innerHTML = rows;
 
   document.getElementById('result-total').textContent = coins;
-  document.getElementById('result-bns').textContent   = '';
-  document.getElementById('result-detail').innerHTML  = 'GG当選：' + sets + 'セット × 350枚 = ' + coins + '枚';
+  document.getElementById('result-bns').textContent   = bonus > 0 ? '特殊役ボーナス込み' : '';
+  document.getElementById('result-detail').innerHTML  =
+    'GG当選：' + sets + 'セット × 350枚' + (bonus > 0 ? ' + ボーナス ' + bonus + '枚' : '') + ' = ' + coins + '枚';
 
   // result-sumのラベルを通常に戻す
   const sumLabel = document.querySelector('#result-panel .result-sum div:first-child');
