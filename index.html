@@ -167,6 +167,14 @@ body {
 }
 .reel.anim-drop { animation: reelDrop 0.35s ease-out; }
 .reel.anim-pop  { animation: reelPop  0.3s ease-out; }
+/* ブラックアウト（GOD揃い用） */
+#blackout {
+  position: fixed; inset: 0; z-index: 260;
+  background: #000; opacity: 0; pointer-events: none;
+  transition: opacity 0.08s ease-in;
+}
+#blackout.active { opacity: 1; pointer-events: all; }
+
 /* Z-GAME 突入カットシーン */
 #zgame-cutscene {
   position: fixed; inset: 0; z-index: 300;
@@ -408,6 +416,7 @@ body {
   </div>
 </div>
 
+<div id="blackout"></div>
 <div id="zgame-cutscene">
   <img src="画像/Z-GAME.png" alt="Z GAME">
 </div>
@@ -853,13 +862,36 @@ function processGame() {
       const instBonus = role.key === 'red7_suroe' ? 1400
                       : role.key === 'god_suroe'  ? 3000 : 0;
       gameState.bonusCoins = instBonus;
-      gameState.phase = 'gg_won';
-      renderReels(ggResult.digits, 'win');
-      renderRole(role.key);
-      updateCounters();
-      showWinAnimation();
-      pushHistory('gg', { sets: 1, coins: 350 + instBonus });
-      showGGResultScreen();
+      gameState.phase      = 'gg_won';
+      document.getElementById('btn-lever').disabled = true;
+
+      const finishInstantGG = () => {
+        renderReels(ggResult.digits, 'win');
+        renderRole(role.key);
+        updateCounters();
+        showWinAnimation();
+        pushHistory('gg', { sets: 1, coins: 350 + instBonus });
+        showGGResultScreen();
+      };
+
+      if (role.key === 'god_suroe') {
+        // 3秒ブラックアウト → 解除後に777表示
+        document.getElementById('blackout').classList.add('active');
+        setTimeout(() => {
+          document.getElementById('blackout').classList.remove('active');
+          finishInstantGG();
+        }, 3000);
+      } else {
+        // 赤7揃い：リール表示後1秒フリーズ → 演出
+        renderReels(ggResult.digits, 'win');
+        renderRole(role.key);
+        updateCounters();
+        setTimeout(() => {
+          showWinAnimation();
+          pushHistory('gg', { sets: 1, coins: 350 + instBonus });
+          showGGResultScreen();
+        }, 1000);
+      }
     } else {
       // GG当選でも保証G加算抽選は実施（減算なし）
       gameState.guaranteeAddPct = null;
